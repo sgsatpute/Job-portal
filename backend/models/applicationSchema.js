@@ -35,6 +35,19 @@ const applicationSchema = new mongoose.Schema({
       required: true,
     },
   },
+  status: {
+    type: String,
+    enum: ["Pending", "Shortlisted", "Rejected"],
+    default: "Pending",
+  },
+  jobID: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Job",
+  },
+  appliedAt: {
+    type: Date,
+    default: Date.now,
+  },
   applicantID: {
     user: {
       type: mongoose.Schema.Types.ObjectId,

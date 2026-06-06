@@ -1,95 +1,120 @@
-# Job Portal App with MERN Stack
+# JobPortal - MERN Stack Job Portal Application
 
-A comprehensive job portal application built using the MERN (MongoDB, Express.js, React.js, Node.js) stack. This application allows users to browse job listings, apply for jobs, and manage their applications seamlessly.
+Developer: Saurav Satpute
+
+JobPortal is a full-stack job portal built with MongoDB, Express.js, React.js, and Node.js. It supports separate job seeker and employer workflows, job posting, real-time job filtering, PDF resume uploads, application management, and status tracking dashboards.
 
 ## Features
 
-- **User Authentication:** Secure authentication using JWT (JSON Web Tokens) for both job seekers and employers.
-- **Job Listings:** Browse through a wide range of job listings fetched from MongoDB.
-- **Application Management:** Job seekers can manage their job applications, and employers can view and manage received applications.
-- **Responsive Design:** Ensures a seamless experience across all devices.
+- User authentication for Job Seekers and Employers using JWT cookies.
+- Protected frontend routes for authenticated workflows.
+- Job posting and job management for employers.
+- Job browsing with real-time frontend search by title or keyword.
+- Filters for job type, location, and salary range.
+- PDF resume upload for job seekers, stored on Cloudinary.
+- Job applications with cover letter, contact details, and resume link.
+- Employer application review with resume link access.
+- Application status updates: Pending, Shortlisted, and Rejected.
+- Job seeker dashboard with total applications, status counts, company name, application date, and current status.
+- Employer dashboard with total jobs posted, total applications received, and application count per job.
+- Modern React UI styled with Tailwind CSS.
+- Responsive navbar with JobPortal branding.
+- Professional homepage hero section.
+- Loading spinners for API calls.
+- Toast notifications for success and error messages using react-hot-toast.
+- Input validation on forms.
+- Centralized backend error handling.
+- 404 page for unknown routes.
 
-## Technologies Used
+## Tech Stack
 
-- **Frontend:** React.js, React Router, Bootstrap
-- **Backend:** Node.js, Express.js, MongoDB
-- **Authentication:** JWT (JSON Web Tokens), Bcrypt (for password hash)
-- **Image Upload:** Cloudinary for storing and managing uploaded images
-- **Deployment:** Vercel (frontend), Render(backend), MongoDB Atlas (database)
+- Frontend: React.js, Vite, React Router, Tailwind CSS, Axios, react-hot-toast, React Icons
+- Backend: Node.js, Express.js, MongoDB, Mongoose, JWT, bcrypt
+- File Uploads: express-fileupload, Cloudinary
+- Database: MongoDB Atlas or local MongoDB
 
-## Getting Started
-
-To get a local copy up and running follow these simple steps.
+## Setup Instructions
 
 ### Prerequisites
 
-- Node.js installed on your machine with latest version or v22.2.0 above
-- MongoDB Atlas account (or local MongoDB server)
-- Cloudinary account for image storage
+- Node.js
+- npm
+- MongoDB connection string
+- Cloudinary account
 
-### Installation
+### Backend Setup
 
-1. Clone the repo:
-   ```sh
-   git clone https://github.com/exclusiveabhi/react-job-portal.git
-   ```
-2. Install NPM packages:
+1. Open the backend folder:
 
    ```sh
-   cd react-job-portal
    cd backend
-   npm install
-   cd..
-   cd frontend
+   ```
+
+2. Install dependencies:
+
+   ```sh
    npm install
    ```
 
-3. ## If you don't want to change the`.env` credentials skip step 4 and move to step 5.
-
-4. Set up environment variables:
-
-   - Create a `config.env` file after creating a `config folder` in the backend directory, containing the following variables:
+3. Create `backend/config/config.env` or `backend/.env` with:
 
    ```env
-   PORT=
+   PORT=4000
    CLOUDINARY_API_KEY=
    CLOUDINARY_API_SECRET=
    CLOUDINARY_CLOUD_NAME=
-   FRONTEND_URL=
+   FRONTEND_URL=http://localhost:5173
    DB_URL=
    JWT_SECRET_KEY=
-   JWT_EXPIRE=
-   COOKIE_EXPIRE=
+   JWT_EXPIRE=7d
+   COOKIE_EXPIRE=7
+   NODE_ENV=development
    ```
 
-   Replace each value with your specific configuration details.
+4. Start the backend:
 
-5. Run the application backend (make sure you are in `/backend` directory) :
-
-   ```sh
-   node server.js
-   ```
-
-6. Run the application frontend (make sure you are in `/frontend` directory) :
    ```sh
    npm run dev
    ```
-7. Open your browser and navigate to `http://localhost:5173` to view the app.
 
-## Contributing
+### Frontend Setup
 
-Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+1. Open the frontend folder:
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request (`we will merge within 24 hour`)
+   ```sh
+   cd frontend
+   ```
 
-## Please give a star ⭐ to the repository if you like it.
+2. Install dependencies:
 
-## Contact
+   ```sh
+   npm install
+   ```
 
-Abhishek Rajput - [GitHub](https://github.com/exclusiveabhi)
+3. Create `frontend/.env` if you need a custom API URL:
 
-Project Link: [https://github.com/exclusiveabhi/react-job-portal.git](https://github.com/exclusiveabhi/react-job-portal.git)
+   ```env
+   VITE_API_URL=http://localhost:4000/api/v1
+   ```
+
+4. Start the frontend:
+
+   ```sh
+   npm run dev
+   ```
+
+5. Open the app at:
+
+   ```txt
+   http://localhost:5173
+   ```
+
+## Screenshots
+
+Screenshots can be added here:
+
+- Homepage
+- Job search and filters
+- Job seeker dashboard
+- Employer dashboard
+- Application status management

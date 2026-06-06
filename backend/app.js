@@ -11,11 +11,12 @@ import fileUpload from "express-fileupload";
 
 const app = express();
 config({ path: "./config/config.env" });
+config();
 
 app.use(
   cors({
     origin: [process.env.FRONTEND_URL],
-    method: ["GET", "POST", "DELETE", "PUT"],
+    methods: ["GET", "POST", "DELETE", "PUT", "PATCH"],
     credentials: true,
   })
 );
@@ -28,6 +29,7 @@ app.use(
   fileUpload({
     useTempFiles: true,
     tempFileDir: "/tmp/",
+    limits: { fileSize: 5 * 1024 * 1024 },
   })
 );
 app.use("/api/v1/user", userRouter);

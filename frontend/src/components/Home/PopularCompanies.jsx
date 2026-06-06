@@ -1,5 +1,4 @@
-import React from "react";
-import { FaMicrosoft, FaApple } from "react-icons/fa";
+import { FaApple, FaMicrosoft } from "react-icons/fa";
 import { SiTesla } from "react-icons/si";
 
 const PopularCompanies = () => {
@@ -7,47 +6,53 @@ const PopularCompanies = () => {
     {
       id: 1,
       title: "Microsoft",
-      location: "Millennium City Centre, Gurugram",
+      location: "Gurugram, Haryana",
       openPositions: 10,
       icon: <FaMicrosoft />,
     },
     {
       id: 2,
       title: "Tesla",
-      location: "Millennium City Centre, Gurugram",
+      location: "Pune, Maharashtra",
       openPositions: 5,
       icon: <SiTesla />,
     },
     {
       id: 3,
       title: "Apple",
-      location: "Millennium City Centre, Gurugram",
+      location: "Bengaluru, Karnataka",
       openPositions: 20,
       icon: <FaApple />,
     },
   ];
+
   return (
-    <div className="companies">
-      <div className="container">
-        <h3>TOP COMPANIES</h3>
-        <div className="banner">
-          {companies.map((element) => {
-            return (
-              <div className="card" key={element.id}>
-                <div className="content">
-                  <div className="icon">{element.icon}</div>
-                  <div className="text">
-                    <p>{element.title}</p>
-                    <p>{element.location}</p>
-                  </div>
+    <section className="bg-slate-100">
+      <div className="page-wrap">
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-slate-950">Top Companies</h2>
+          <p className="mt-2 text-slate-600">Representative hiring partners and open role volume.</p>
+        </div>
+        <div className="grid gap-5 md:grid-cols-3">
+          {companies.map((element) => (
+            <div key={element.id} className="card-surface p-6">
+              <div className="flex items-center gap-4">
+                <div className="grid h-12 w-12 place-items-center rounded-lg bg-brand-50 text-2xl text-brand-700">
+                  {element.icon}
                 </div>
-                <button>Open Positions {element.openPositions}</button>
+                <div>
+                  <p className="text-lg font-bold text-slate-950">{element.title}</p>
+                  <p className="text-sm text-slate-500">{element.location}</p>
+                </div>
               </div>
-            );
-          })}
+              <div className="mt-5 rounded-lg bg-slate-50 px-4 py-3 text-sm font-semibold text-brand-700">
+                Open Positions: {element.openPositions}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
-    </div>
+    </section>
   );
 };
 
