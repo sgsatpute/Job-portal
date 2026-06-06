@@ -8,6 +8,12 @@ const api = axios.create({
 export const getErrorMessage = (
   error,
   fallback = "Something went wrong. Please try again."
-) => error?.response?.data?.message || fallback;
+) => {
+  if (!error?.response) {
+    return "Cannot reach the backend API. Make sure the backend is running and open the frontend at http://localhost:5173.";
+  }
+
+  return error.response.data?.message || fallback;
+};
 
 export default api;
