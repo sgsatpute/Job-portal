@@ -4,6 +4,9 @@
   "description": "Express API for JobPortal - MERN Stack Job Portal Application",
   "main": "server.js",
   "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js"

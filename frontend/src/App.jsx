@@ -18,6 +18,7 @@ import MyJobs from "./components/Job/MyJobs";
 import api from "./utils/api";
 import ProtectedRoute from "./components/Shared/ProtectedRoute";
 import Profile from "./components/Profile/Profile";
+import ExternalJobs from "./components/ExternalJobs/ExternalJobs";
 
 const App = () => {
   const { setAuthLoading, setIsAuthorized, setUser } = useContext(Context);
@@ -56,6 +57,14 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <Jobs />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/external-jobs"
+            element={
+              <ProtectedRoute>
+                <ExternalJobs />
               </ProtectedRoute>
             }
           />
