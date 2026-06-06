@@ -38,6 +38,28 @@ const userSchema = new mongoose.Schema({
       type: String,
     },
   },
+  profile: {
+    headline: {
+      type: String,
+      maxLength: [80, "Headline cannot exceed 80 characters!"],
+    },
+    location: {
+      type: String,
+      maxLength: [120, "Location cannot exceed 120 characters!"],
+    },
+    companyName: {
+      type: String,
+      maxLength: [80, "Company name cannot exceed 80 characters!"],
+    },
+    companyWebsite: {
+      type: String,
+      maxLength: [160, "Company website cannot exceed 160 characters!"],
+    },
+    companyDescription: {
+      type: String,
+      maxLength: [500, "Company description cannot exceed 500 characters!"],
+    },
+  },
   createdAt: {
     type: Date,
     default: Date.now,

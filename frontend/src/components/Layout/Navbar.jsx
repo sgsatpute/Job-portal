@@ -35,6 +35,7 @@ const Navbar = () => {
       to: "/applications/me",
       label: user?.role === "Employer" ? "Applications" : "Dashboard",
     },
+    { to: "/profile", label: "Profile" },
   ];
 
   if (user?.role === "Employer") {
