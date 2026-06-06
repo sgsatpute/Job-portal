@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { Context } from "../../main";
 
 const HeroSection = () => {
-  const { user } = useContext(Context);
+  const { isAuthorized, user } = useContext(Context);
   const details = [
     {
       id: 1,
@@ -51,7 +51,11 @@ const HeroSection = () => {
             <Link to="/job/getall" className="primary-btn">
               Browse Jobs
             </Link>
-            {user?.role === "Employer" ? (
+            {!isAuthorized ? (
+              <Link to="/register" className="secondary-btn">
+                Create Account
+              </Link>
+            ) : user?.role === "Employer" ? (
               <Link to="/job/post" className="secondary-btn">
                 Post a Job
               </Link>

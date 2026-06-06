@@ -30,6 +30,9 @@ const initialForm = {
   salaryType: "",
 };
 
+const TITLE_MAX_LENGTH = 30;
+const DESCRIPTION_MAX_LENGTH = 500;
+
 const PostJob = () => {
   const [form, setForm] = useState(initialForm);
   const [loading, setLoading] = useState(false);
@@ -59,8 +62,18 @@ const PostJob = () => {
       toast.error("Job title must contain at least 3 characters.");
       return false;
     }
+    if (form.title.trim().length > TITLE_MAX_LENGTH) {
+      toast.error(`Job title cannot exceed ${TITLE_MAX_LENGTH} characters.`);
+      return false;
+    }
     if (form.description.trim().length < 30) {
       toast.error("Job description must contain at least 30 characters.");
+      return false;
+    }
+    if (form.description.trim().length > DESCRIPTION_MAX_LENGTH) {
+      toast.error(
+        `Job description cannot exceed ${DESCRIPTION_MAX_LENGTH} characters.`
+      );
       return false;
     }
     if (form.location.trim().length < 20) {
@@ -132,6 +145,7 @@ const PostJob = () => {
               onChange={(e) => updateField("title", e.target.value)}
               className="field mt-2"
               placeholder="Frontend Developer"
+              maxLength={TITLE_MAX_LENGTH}
             />
           </label>
 
@@ -258,6 +272,7 @@ const PostJob = () => {
             onChange={(e) => updateField("description", e.target.value)}
             className="field mt-2"
             placeholder="Responsibilities, requirements, and selection process"
+            maxLength={DESCRIPTION_MAX_LENGTH}
           />
         </label>
 

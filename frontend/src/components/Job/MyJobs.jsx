@@ -18,6 +18,9 @@ const categories = [
   "Data Entry Operator",
 ];
 
+const TITLE_MAX_LENGTH = 30;
+const DESCRIPTION_MAX_LENGTH = 500;
+
 const pickJobPayload = (job) => ({
   title: job.title,
   description: job.description,
@@ -205,6 +208,7 @@ const MyJobs = () => {
                         handleInputChange(job._id, "title", e.target.value)
                       }
                       className="field mt-2"
+                      maxLength={TITLE_MAX_LENGTH}
                     />
                   </label>
 
@@ -353,6 +357,7 @@ const MyJobs = () => {
                         handleInputChange(job._id, "description", e.target.value)
                       }
                       className="field mt-2"
+                      maxLength={DESCRIPTION_MAX_LENGTH}
                     />
                   </label>
 

@@ -46,19 +46,11 @@ const App = () => {
           <Route path="/register" element={<Register />} />
           <Route
             path="/"
-            element={
-              <ProtectedRoute>
-                <Home />
-              </ProtectedRoute>
-            }
+            element={<Home />}
           />
           <Route
             path="/job/getall"
-            element={
-              <ProtectedRoute>
-                <Jobs />
-              </ProtectedRoute>
-            }
+            element={<Jobs />}
           />
           <Route
             path="/external-jobs"

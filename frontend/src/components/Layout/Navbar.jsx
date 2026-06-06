@@ -24,11 +24,7 @@ const Navbar = () => {
     }
   };
 
-  if (!isAuthorized) {
-    return null;
-  }
-
-  const navLinks = [
+  const navLinks = isAuthorized ? [
     { to: "/", label: "Home" },
     { to: "/job/getall", label: "Jobs" },
     { to: "/external-jobs", label: "External Jobs" },
@@ -37,6 +33,9 @@ const Navbar = () => {
       label: user?.role === "Employer" ? "Applications" : "Dashboard",
     },
     { to: "/profile", label: "Profile" },
+  ] : [
+    { to: "/", label: "Home" },
+    { to: "/job/getall", label: "Jobs" },
   ];
 
   if (user?.role === "Employer") {
@@ -91,9 +90,28 @@ const Navbar = () => {
                 {link.label}
               </NavLink>
             ))}
-            <button type="button" onClick={handleLogout} className="secondary-btn">
-              Logout
-            </button>
+            {isAuthorized ? (
+              <button type="button" onClick={handleLogout} className="secondary-btn">
+                Logout
+              </button>
+            ) : (
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                <Link
+                  to="/login"
+                  onClick={() => setShow(false)}
+                  className="secondary-btn"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  onClick={() => setShow(false)}
+                  className="primary-btn"
+                >
+                  Register
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </div>

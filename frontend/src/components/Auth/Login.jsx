@@ -6,7 +6,6 @@ import { Link, Navigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Context } from "../../main";
 import api, { getErrorMessage } from "../../utils/api";
-import LoadingSpinner from "../Shared/LoadingSpinner";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -47,11 +46,7 @@ const Login = () => {
     }
   };
 
-  if (authLoading) {
-    return <LoadingSpinner label="Checking session..." />;
-  }
-
-  if (isAuthorized) {
+  if (!authLoading && isAuthorized) {
     return <Navigate to="/" replace />;
   }
 
