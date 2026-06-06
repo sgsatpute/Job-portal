@@ -5,6 +5,9 @@
   "description": "React frontend for JobPortal - MERN Stack Job Portal Application",
   "author": "Saurav Satpute",
   "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",

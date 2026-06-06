@@ -131,3 +131,59 @@ Screenshots can be added here:
 - For cross-domain deployments using cookies, set `COOKIE_SAME_SITE=none` and `COOKIE_SECURE=true`.
 - Use the `/api/v1/health` endpoint for backend health checks.
 - Keep MongoDB Atlas network access, database users, and Cloudinary upload permissions locked down.
+
+## Deployment
+
+### Backend on Render
+
+The repository includes `render.yaml` for a Render web service.
+
+1. Create a new Render Blueprint or Web Service from this repository.
+2. Use `backend` as the root directory if creating the service manually.
+3. Set these backend environment variables in Render:
+
+   ```env
+   NODE_ENV=production
+   FRONTEND_URL=https://your-vercel-domain.vercel.app
+   DB_URL=your-rotated-mongodb-atlas-url
+   JWT_SECRET_KEY=your-new-long-random-secret
+   JWT_EXPIRE=7d
+   COOKIE_EXPIRE=7
+   COOKIE_SAME_SITE=none
+   COOKIE_SECURE=true
+   CLOUDINARY_CLOUD_NAME=your-cloudinary-cloud-name
+   CLOUDINARY_API_KEY=your-cloudinary-api-key
+   CLOUDINARY_API_SECRET=your-cloudinary-api-secret
+   ADZUNA_APP_ID=optional-adzuna-app-id
+   ADZUNA_APP_KEY=optional-adzuna-app-key
+   ADZUNA_COUNTRY=in
+   ```
+
+4. Build command: `npm install`
+5. Start command: `npm start`
+6. Health check path: `/api/v1/health`
+
+### Frontend on Vercel
+
+The frontend includes `frontend/vercel.json` for Vite SPA routing.
+
+1. Import the repository into Vercel.
+2. Set the Vercel project root directory to `frontend`.
+3. Set this frontend environment variable:
+
+   ```env
+   VITE_API_URL=https://your-render-backend-url.onrender.com/api/v1
+   ```
+
+4. Build command: `npm run build`
+5. Output directory: `dist`
+
+### External Jobs API
+
+External jobs are optional and currently use Adzuna through the backend proxy route:
+
+```txt
+GET /api/v1/external-jobs/search
+```
+
+Get Adzuna credentials from the Adzuna developer portal, then set `ADZUNA_APP_ID`, `ADZUNA_APP_KEY`, and `ADZUNA_COUNTRY` on the backend. External jobs are labeled separately in the UI and send users to the source site to apply.

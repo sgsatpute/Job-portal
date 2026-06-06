@@ -31,6 +31,7 @@ const Navbar = () => {
   const navLinks = [
     { to: "/", label: "Home" },
     { to: "/job/getall", label: "Jobs" },
+    { to: "/external-jobs", label: "External Jobs" },
     {
       to: "/applications/me",
       label: user?.role === "Employer" ? "Applications" : "Dashboard",
