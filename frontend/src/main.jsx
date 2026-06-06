@@ -1,13 +1,15 @@
-import React, { createContext, useState } from "react";
+import { StrictMode, createContext, useState } from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 
 export const Context = createContext({
   isAuthorized: false,
+  authLoading: true,
 });
 
 const AppWrapper = () => {
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
   const [user, setUser] = useState({});
 
   return (
@@ -15,6 +17,8 @@ const AppWrapper = () => {
       value={{
         isAuthorized,
         setIsAuthorized,
+        authLoading,
+        setAuthLoading,
         user,
         setUser,
       }}
@@ -25,7 +29,7 @@ const AppWrapper = () => {
 };
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
+  <StrictMode>
     <AppWrapper />
-  </React.StrictMode>
+  </StrictMode>
 );

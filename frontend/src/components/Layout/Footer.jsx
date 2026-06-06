@@ -1,23 +1,27 @@
-import React, { useContext } from 'react'
-import {Context} from "../../main"
-import {Link} from "react-router-dom"
-import { FaGithub , FaLinkedin} from "react-icons/fa"
-import { SiLeetcode } from "react-icons/si";
-import { RiInstagramFill} from "react-icons/ri"
-function Footer() {
-  const {isAuthorized}  = useContext(Context)
-  return (
-    <footer className= {isAuthorized ? "footerShow" : "footerHide"}>
-<div>&copy; All Rights Reserved by Abhishek.</div>
-<div>
-  <Link to={'https://github.com/exclusiveabhi'} target='github'><FaGithub></FaGithub></Link>
-  <Link to={'https://leetcode.com/u/exclusiveabhi/'} target='leetcode'><SiLeetcode></SiLeetcode></Link>
-  <Link to={'https://www.linkedin.com/in/abhishek-rajput-/'} target='linkedin'><FaLinkedin></FaLinkedin></Link>
-  <Link to={'https://www.instagram.com/exclusiveabhi/'} target='instagram'><RiInstagramFill></RiInstagramFill></Link>
-</div>
-      
-    </footer>
-  )
-}
+import { useContext } from "react";
+import { FaBriefcase } from "react-icons/fa";
+import { Context } from "../../main";
 
-export default Footer
+const Footer = () => {
+  const { isAuthorized } = useContext(Context);
+
+  if (!isAuthorized) {
+    return null;
+  }
+
+  return (
+    <footer className="border-t border-slate-200 bg-white">
+      <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-6 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+        <div className="flex items-center gap-2 font-semibold text-slate-800">
+          <span className="text-brand-600">
+            <FaBriefcase />
+          </span>
+          JobPortal
+        </div>
+        <p>Developed by Saurav Satpute. All rights reserved.</p>
+      </div>
+    </footer>
+  );
+};
+
+export default Footer;

@@ -1,10 +1,9 @@
-import React, { useContext, useState } from "react";
-import { Context } from "../../main";
-import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useContext, useState } from "react";
+import { FaBars, FaBriefcase, FaTimes } from "react-icons/fa";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { GiHamburgerMenu } from "react-icons/gi";
-import { AiOutlineClose } from "react-icons/ai"; // Import the close icon
+import { Context } from "../../main";
+import api, { getErrorMessage } from "../../utils/api";
 
 const Navbar = () => {
   const [show, setShow] = useState(false);
@@ -13,65 +12,87 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     try {
-      const response = await axios.get(
-        "http://localhost:4000/api/v1/user/logout",
-        {
-          withCredentials: true,
-        }
-      );
+      const response = await api.get("/user/logout");
       toast.success(response.data.message);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Logged out.");
+      toast.error(getErrorMessage(error, "Logged out."));
     } finally {
       setUser({});
       setIsAuthorized(false);
+      setShow(false);
       navigateTo("/login");
     }
   };
 
-  return (
-    <nav className={isAuthorized ? "navbarShow" : "navbarHide"}>
-      <div className="container">
-        <div className="logo">
-          <img src="/careerconnect-white.png" alt="logo" />
-        </div>
-        <ul className={!show ? "menu" : "show-menu menu"}>
-          <li>
-            <Link to={"/"} onClick={() => setShow(false)}>
-              HOME
-            </Link>
-          </li>
-          <li>
-            <Link to={"/job/getall"} onClick={() => setShow(false)}>
-              ALL JOBS
-            </Link>
-          </li>
-          <li>
-            <Link to={"/applications/me"} onClick={() => setShow(false)}>
-              {user && user.role === "Employer"
-                ? "APPLICANT'S APPLICATIONS"
-                : "MY APPLICATIONS"}
-            </Link>
-          </li>
-          {user && user.role === "Employer" ? (
-            <>
-              <li>
-                <Link to={"/job/post"} onClick={() => setShow(false)}>
-                  POST NEW JOB
-                </Link>
-              </li>
-              <li>
-                <Link to={"/job/me"} onClick={() => setShow(false)}>
-                  VIEW YOUR JOBS
-                </Link>
-              </li>
-            </>
-          ) : null}
+  if (!isAuthorized) {
+    return null;
+  }
 
-          <button onClick={handleLogout}>LOGOUT</button>
-        </ul>
-        <div className="hamburger" onClick={() => setShow(!show)}>
-          {show ? <AiOutlineClose /> : <GiHamburgerMenu />}
+  const navLinks = [
+    { to: "/", label: "Home" },
+    { to: "/job/getall", label: "Jobs" },
+    {
+      to: "/applications/me",
+      label: user?.role === "Employer" ? "Applications" : "Dashboard",
+    },
+  ];
+
+  if (user?.role === "Employer") {
+    navLinks.push(
+      { to: "/job/post", label: "Post Job" },
+      { to: "/job/me", label: "Employer Dashboard" }
+    );
+  }
+
+  return (
+    <nav className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <Link
+          to="/"
+          className="flex items-center gap-2 text-xl font-bold text-brand-700"
+          onClick={() => setShow(false)}
+        >
+          <span className="grid h-10 w-10 place-items-center rounded-lg bg-brand-600 text-white">
+            <FaBriefcase />
+          </span>
+          JobPortal
+        </Link>
+
+        <button
+          className="inline-flex rounded-lg p-2 text-slate-700 hover:bg-slate-100 lg:hidden"
+          onClick={() => setShow((value) => !value)}
+          aria-label={show ? "Close navigation" : "Open navigation"}
+          type="button"
+        >
+          {show ? <FaTimes /> : <FaBars />}
+        </button>
+
+        <div
+          className={`absolute left-0 top-16 w-full border-b border-slate-200 bg-white px-4 py-4 shadow-soft lg:static lg:flex lg:w-auto lg:items-center lg:gap-6 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none ${
+            show ? "block" : "hidden lg:flex"
+          }`}
+        >
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+            {navLinks.map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                onClick={() => setShow(false)}
+                className={({ isActive }) =>
+                  `text-sm font-semibold transition ${
+                    isActive
+                      ? "text-brand-700"
+                      : "text-slate-600 hover:text-brand-700"
+                  }`
+                }
+              >
+                {link.label}
+              </NavLink>
+            ))}
+            <button type="button" onClick={handleLogout} className="secondary-btn">
+              Logout
+            </button>
+          </div>
         </div>
       </div>
     </nav>

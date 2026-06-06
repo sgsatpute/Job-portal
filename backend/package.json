@@ -1,14 +1,14 @@
 {
-  "name": "backend",
+  "name": "jobportal-backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Express API for JobPortal - MERN Stack Job Portal Application",
+  "main": "server.js",
   "type": "module",
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js"
   },
-  "author": "",
+  "author": "Saurav Satpute",
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^5.1.1",
