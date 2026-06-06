@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { FaFilter, FaSearch } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -13,14 +13,6 @@ const salaryRanges = [
   { value: "100000+", label: "Above 100,000" },
 ];
 
-const getSalaryValue = (job) => {
-  if (job.fixedSalary) return Number(job.fixedSalary);
-  if (job.salaryFrom && job.salaryTo) {
-    return (Number(job.salaryFrom) + Number(job.salaryTo)) / 2;
-  }
-  return 0;
-};
-
 const formatSalary = (job) => {
   if (job.fixedSalary) return Number(job.fixedSalary).toLocaleString();
   if (job.salaryFrom && job.salaryTo) {
@@ -33,7 +25,16 @@ const formatSalary = (job) => {
 
 const Jobs = () => {
   const [jobs, setJobs] = useState([]);
+  const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 9,
+    totalJobs: 0,
+    totalPages: 1,
+  });
   const [filters, setFilters] = useState({
     search: "",
     jobType: "all",
@@ -42,69 +43,50 @@ const Jobs = () => {
   });
 
   useEffect(() => {
+    const controller = new AbortController();
     const fetchJobs = async () => {
+      setLoading(true);
       try {
-        const { data } = await api.get("/job/getall");
+        const { data } = await api.get("/job/getall", {
+          params: {
+            ...filters,
+            page,
+            limit: pagination.limit,
+          },
+          signal: controller.signal,
+        });
         setJobs(data.jobs || []);
+        setLocations(data.filters?.locations || []);
+        setPagination(
+          data.pagination || {
+            page,
+            limit: pagination.limit,
+            totalJobs: 0,
+            totalPages: 1,
+          }
+        );
       } catch (error) {
+        if (error.code === "ERR_CANCELED") return;
         toast.error(getErrorMessage(error, "Unable to load jobs."));
       } finally {
         setLoading(false);
+        setInitialLoad(false);
       }
     };
-    fetchJobs();
-  }, []);
+    const timeoutId = window.setTimeout(fetchJobs, 250);
 
-  const locations = useMemo(() => {
-    const values = jobs
-      .map((job) => [job.city, job.country].filter(Boolean).join(", "))
-      .filter(Boolean);
-    return [...new Set(values)];
-  }, [jobs]);
-
-  const filteredJobs = useMemo(() => {
-    const search = filters.search.trim().toLowerCase();
-
-    return jobs.filter((job) => {
-      const searchableText = [
-        job.title,
-        job.category,
-        job.description,
-        job.city,
-        job.country,
-        job.location,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      const matchesSearch = !search || searchableText.includes(search);
-      const matchesType =
-        filters.jobType === "all" || job.jobType === filters.jobType;
-      const jobLocation = [job.city, job.country].filter(Boolean).join(", ");
-      const matchesLocation =
-        filters.location === "all" || jobLocation === filters.location;
-      const salary = getSalaryValue(job);
-      const matchesSalary =
-        filters.salaryRange === "all" ||
-        (filters.salaryRange === "0-30000" && salary < 30000) ||
-        (filters.salaryRange === "30000-60000" &&
-          salary >= 30000 &&
-          salary <= 60000) ||
-        (filters.salaryRange === "60000-100000" &&
-          salary > 60000 &&
-          salary <= 100000) ||
-        (filters.salaryRange === "100000+" && salary > 100000);
-
-      return matchesSearch && matchesType && matchesLocation && matchesSalary;
-    });
-  }, [filters, jobs]);
+    return () => {
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [filters, page, pagination.limit]);
 
   const updateFilter = (key, value) => {
+    setPage(1);
     setFilters((current) => ({ ...current, [key]: value }));
   };
 
-  if (loading) {
+  if (initialLoad && loading) {
     return <LoadingSpinner label="Loading jobs..." />;
   }
 
@@ -183,16 +165,17 @@ const Jobs = () => {
 
       <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-600">
         <FaFilter className="text-brand-600" />
-        {filteredJobs.length} job{filteredJobs.length === 1 ? "" : "s"} found
+        {pagination.totalJobs} job{pagination.totalJobs === 1 ? "" : "s"} found
+        {loading && <span className="text-brand-700">Refreshing...</span>}
       </div>
 
-      {filteredJobs.length === 0 ? (
+      {jobs.length === 0 ? (
         <div className="card-surface p-8 text-center text-slate-600">
           No jobs match the selected filters.
         </div>
       ) : (
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {filteredJobs.map((job) => (
+          {jobs.map((job) => (
             <article key={job._id} className="card-surface flex flex-col p-6">
               <div className="mb-4 flex items-start justify-between gap-4">
                 <div>
@@ -218,6 +201,34 @@ const Jobs = () => {
               </Link>
             </article>
           ))}
+        </div>
+      )}
+
+      {pagination.totalPages > 1 && (
+        <div className="mt-8 flex flex-col items-center justify-between gap-4 rounded-lg border border-slate-200 bg-white p-4 sm:flex-row">
+          <p className="text-sm font-semibold text-slate-600">
+            Page {pagination.page} of {pagination.totalPages}
+          </p>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              className="secondary-btn"
+              disabled={page <= 1 || loading}
+              onClick={() => setPage((current) => Math.max(current - 1, 1))}
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              className="primary-btn"
+              disabled={page >= pagination.totalPages || loading}
+              onClick={() =>
+                setPage((current) => Math.min(current + 1, pagination.totalPages))
+              }
+            >
+              Next
+            </button>
+          </div>
         </div>
       )}
     </main>

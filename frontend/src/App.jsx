@@ -17,6 +17,7 @@ import NotFound from "./components/NotFound/NotFound";
 import MyJobs from "./components/Job/MyJobs";
 import api from "./utils/api";
 import ProtectedRoute from "./components/Shared/ProtectedRoute";
+import Profile from "./components/Profile/Profile";
 
 const App = () => {
   const { setAuthLoading, setIsAuthorized, setUser } = useContext(Context);
@@ -79,6 +80,14 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <MyApplications />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
               </ProtectedRoute>
             }
           />

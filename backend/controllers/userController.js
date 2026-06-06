@@ -1,7 +1,7 @@
 import { catchAsyncErrors } from "../middlewares/catchAsyncError.js";
 import { User } from "../models/userSchema.js";
 import ErrorHandler from "../middlewares/error.js";
-import { sendToken } from "../utils/jwtToken.js";
+import { getCookieOptions, sendToken } from "../utils/jwtToken.js";
 import cloudinary from "cloudinary";
 import validator from "validator";
 
@@ -77,9 +77,8 @@ export const logout = catchAsyncErrors(async (req, res, next) => {
   res
     .status(200)
     .cookie("token", "", {
-      httpOnly: true,
+      ...getCookieOptions(),
       expires: new Date(0),
-      path: "/",
     })
     .json({
       success: true,
@@ -97,11 +96,71 @@ export const getUser = catchAsyncErrors((req, res, next) => {
     phone: user.phone,
     role: user.role,
     resume: user.resume,
+    profile: user.profile,
   };
 
   res.status(200).json({
     success: true,
     user: sanitizedUser,
+  });
+});
+
+export const updateProfile = catchAsyncErrors(async (req, res, next) => {
+  const { name, phone, profile = {} } = req.body;
+  const update = {};
+
+  if (name !== undefined) {
+    if (String(name).trim().length < 3) {
+      return next(new ErrorHandler("Name must contain at least 3 characters.", 400));
+    }
+    update.name = String(name).trim();
+  }
+
+  if (phone !== undefined) {
+    if (!/^[0-9]{10,15}$/.test(String(phone))) {
+      return next(new ErrorHandler("Phone number must contain 10 to 15 digits.", 400));
+    }
+    update.phone = phone;
+  }
+
+  const sanitizedProfile = {
+    headline: profile.headline?.trim() || "",
+    location: profile.location?.trim() || "",
+    companyName: profile.companyName?.trim() || "",
+    companyWebsite: profile.companyWebsite?.trim() || "",
+    companyDescription: profile.companyDescription?.trim() || "",
+  };
+
+  if (
+    sanitizedProfile.companyWebsite &&
+    !validator.isURL(sanitizedProfile.companyWebsite, {
+      require_protocol: true,
+    })
+  ) {
+    return next(
+      new ErrorHandler("Company website must include http:// or https://.", 400)
+    );
+  }
+
+  update.profile = sanitizedProfile;
+
+  const updatedUser = await User.findByIdAndUpdate(req.user._id, update, {
+    new: true,
+    runValidators: true,
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Profile updated successfully.",
+    user: {
+      _id: updatedUser._id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      phone: updatedUser.phone,
+      role: updatedUser.role,
+      resume: updatedUser.resume,
+      profile: updatedUser.profile,
+    },
   });
 });
 

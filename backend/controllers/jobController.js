@@ -3,11 +3,109 @@ import { Job } from "../models/jobSchema.js";
 import { Application } from "../models/applicationSchema.js";
 import ErrorHandler from "../middlewares/error.js";
 
+const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const buildSalaryFilter = (salaryRange) => {
+  switch (salaryRange) {
+    case "0-30000":
+      return {
+        $or: [
+          { fixedSalary: { $gt: 0, $lt: 30000 } },
+          { salaryTo: { $gt: 0, $lt: 30000 } },
+        ],
+      };
+    case "30000-60000":
+      return {
+        $or: [
+          { fixedSalary: { $gte: 30000, $lte: 60000 } },
+          { salaryFrom: { $lte: 60000 }, salaryTo: { $gte: 30000 } },
+        ],
+      };
+    case "60000-100000":
+      return {
+        $or: [
+          { fixedSalary: { $gt: 60000, $lte: 100000 } },
+          { salaryFrom: { $lte: 100000 }, salaryTo: { $gt: 60000 } },
+        ],
+      };
+    case "100000+":
+      return {
+        $or: [
+          { fixedSalary: { $gt: 100000 } },
+          { salaryFrom: { $gt: 100000 } },
+          { salaryTo: { $gt: 100000 } },
+        ],
+      };
+    default:
+      return {};
+  }
+};
+
 export const getAllJobs = catchAsyncErrors(async (req, res, next) => {
-  const jobs = await Job.find({ expired: false }).sort({ jobPostedOn: -1 });
+  const {
+    search = "",
+    jobType = "all",
+    location = "all",
+    salaryRange = "all",
+  } = req.query;
+  const page = Math.max(Number(req.query.page) || 1, 1);
+  const limit = Math.min(Math.max(Number(req.query.limit) || 9, 1), 30);
+  const skip = (page - 1) * limit;
+
+  const query = { expired: false };
+  const trimmedSearch = String(search).trim();
+
+  if (trimmedSearch) {
+    const searchRegex = new RegExp(escapeRegex(trimmedSearch), "i");
+    query.$or = [
+      { title: searchRegex },
+      { category: searchRegex },
+      { description: searchRegex },
+      { city: searchRegex },
+      { country: searchRegex },
+      { location: searchRegex },
+    ];
+  }
+
+  if (jobType !== "all") {
+    query.jobType = jobType;
+  }
+
+  if (location !== "all") {
+    const [city, country] = String(location)
+      .split(",")
+      .map((value) => value.trim());
+    if (city) query.city = new RegExp(`^${escapeRegex(city)}$`, "i");
+    if (country) query.country = new RegExp(`^${escapeRegex(country)}$`, "i");
+  }
+
+  Object.assign(query, buildSalaryFilter(salaryRange));
+
+  const [jobs, totalJobs, activeJobsForFilters] = await Promise.all([
+    Job.find(query).sort({ jobPostedOn: -1 }).skip(skip).limit(limit),
+    Job.countDocuments(query),
+    Job.find({ expired: false }).select("city country"),
+  ]);
+  const locations = [
+    ...new Set(
+      activeJobsForFilters
+        .map((job) => [job.city, job.country].filter(Boolean).join(", "))
+        .filter(Boolean)
+    ),
+  ].sort();
+
   res.status(200).json({
     success: true,
     jobs,
+    pagination: {
+      page,
+      limit,
+      totalJobs,
+      totalPages: Math.max(Math.ceil(totalJobs / limit), 1),
+    },
+    filters: {
+      locations,
+    },
   });
 });
 

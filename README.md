@@ -71,6 +71,8 @@ JobPortal is a full-stack job portal built with MongoDB, Express.js, React.js, a
    NODE_ENV=development
    ```
 
+   Use `backend/.env.example` as the template. Real `.env` files are ignored by Git and should never be committed.
+
 4. Start the backend:
 
    ```sh
@@ -97,6 +99,8 @@ JobPortal is a full-stack job portal built with MongoDB, Express.js, React.js, a
    VITE_API_URL=http://localhost:4000/api/v1
    ```
 
+   Use `frontend/.env.example` as the template.
+
 4. Start the frontend:
 
    ```sh
@@ -118,3 +122,12 @@ Screenshots can be added here:
 - Job seeker dashboard
 - Employer dashboard
 - Application status management
+
+## Production Notes
+
+- Rotate any exposed MongoDB, Cloudinary, and JWT secrets before deploying.
+- Set `NODE_ENV=production` on the backend.
+- Set `FRONTEND_URL` to the deployed frontend URL. Multiple origins can be comma-separated.
+- For cross-domain deployments using cookies, set `COOKIE_SAME_SITE=none` and `COOKIE_SECURE=true`.
+- Use the `/api/v1/health` endpoint for backend health checks.
+- Keep MongoDB Atlas network access, database users, and Cloudinary upload permissions locked down.
