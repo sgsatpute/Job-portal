@@ -6,7 +6,7 @@ import { User } from "../models/userSchema.js";
 import cloudinary from "cloudinary";
 import validator from "validator";
 import fs from "fs/promises";
-import pdfParse from "pdf-parse";
+import pdfParse from "pdf-parse/lib/pdf-parse.js";
 
 const APPLICATION_STATUSES = ["Pending", "Shortlisted", "Rejected"];
 const MAX_RESUME_TEXT_LENGTH = 12000;

@@ -25,6 +25,19 @@ export const ScoreBlock = ({ label, value }) => (
 export const ListBlock = ({ title, items }) => {
   const safeItems = Array.isArray(items) ? items.filter(Boolean) : [];
   if (safeItems.length === 0) return null;
+  const renderItem = (item) => {
+    if (typeof item === "string") return item;
+    return (
+      item.step ||
+      item.focus ||
+      item.question ||
+      item.title ||
+      item.skill ||
+      Object.values(item)
+        .filter((value) => typeof value === "string")
+        .join(" - ")
+    );
+  };
 
   return (
     <div className="rounded-lg bg-slate-50 p-4">
@@ -33,7 +46,7 @@ export const ListBlock = ({ title, items }) => {
         {safeItems.map((item, index) => (
           <li key={`${title}-${index}`} className="flex gap-2">
             <span className="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-brand-600" />
-            <span>{typeof item === "string" ? item : item.step || item.focus}</span>
+            <span>{renderItem(item)}</span>
           </li>
         ))}
       </ul>

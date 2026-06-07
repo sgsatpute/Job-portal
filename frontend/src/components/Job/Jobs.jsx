@@ -88,6 +88,7 @@ const Jobs = () => {
   useEffect(() => {
     if (!isAuthorized || user?.role !== "Job Seeker" || jobs.length === 0) {
       setJobMatches({});
+      setMatchesLoading(false);
       return;
     }
 

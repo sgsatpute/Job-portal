@@ -5,7 +5,7 @@ import { getCookieOptions, sendToken } from "../utils/jwtToken.js";
 import cloudinary from "cloudinary";
 import validator from "validator";
 import fs from "fs/promises";
-import pdfParse from "pdf-parse";
+import pdfParse from "pdf-parse/lib/pdf-parse.js";
 
 const MAX_RESUME_TEXT_LENGTH = 12000;
 
