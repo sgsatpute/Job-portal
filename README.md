@@ -38,6 +38,7 @@ The following pages require a valid login session, so screenshots should be capt
 - Employer dashboard
 - Employer posted jobs page
 - Employer applications/status management page
+- AI Career Assistant page
 - External jobs page
 
 Suggested file names:
@@ -49,6 +50,7 @@ docs/screenshots/jobseeker-dashboard.png
 docs/screenshots/profile-resume.png
 docs/screenshots/employer-dashboard.png
 docs/screenshots/employer-applications.png
+docs/screenshots/ai-assistant.png
 docs/screenshots/external-jobs.png
 ```
 
@@ -75,6 +77,7 @@ JobPortal has two user roles:
 - Application statuses: `Pending`, `Shortlisted`, and `Rejected`.
 - Job seeker dashboard with total applications and status counts.
 - Employer dashboard with total jobs posted and total applications received.
+- AI Career Assistant for job-fit scoring, resume tips, gaps, next steps, and interview questions.
 - External live jobs integration through Adzuna API.
 - Tailwind CSS UI.
 - Responsive navbar with `JobPortal` branding.
@@ -94,6 +97,7 @@ JobPortal has two user roles:
 | Backend | Node.js, Express.js, Mongoose, JWT, bcrypt, validator |
 | Database | MongoDB Atlas or local MongoDB |
 | File Uploads | express-fileupload, Cloudinary |
+| AI | OpenAI Responses API, optional smart fallback advisor |
 | External Jobs | Adzuna Jobs API, optional |
 | Deployment | Vercel for frontend, Render for backend |
 | CI | GitHub Actions |
@@ -106,6 +110,7 @@ flowchart LR
   Frontend --> API["Express API<br/>Render"]
   API --> MongoDB["MongoDB Atlas"]
   API --> Cloudinary["Cloudinary PDF Resume Storage"]
+  API --> OpenAI["OpenAI API<br/>Optional"]
   API --> Adzuna["Adzuna Jobs API<br/>Optional"]
 ```
 
@@ -180,6 +185,8 @@ CLOUDINARY_API_SECRET=your-cloudinary-api-secret
 ADZUNA_APP_ID=optional-adzuna-app-id
 ADZUNA_APP_KEY=optional-adzuna-app-key
 ADZUNA_COUNTRY=in
+OPENAI_API_KEY=optional-openai-api-key
+OPENAI_MODEL=gpt-5-mini
 ```
 
 Start the backend:
@@ -320,6 +327,12 @@ limit=9
 | --- | --- | --- | --- |
 | GET | `/external-jobs/search` | Required | Search live jobs from Adzuna |
 
+### AI Routes
+
+| Method | Route | Auth | Description |
+| --- | --- | --- | --- |
+| POST | `/ai/career-advice` | Required | Generate job-fit advice, resume tips, next steps, and interview questions |
+
 Supported query parameters:
 
 ```text
@@ -342,6 +355,32 @@ ADZUNA_COUNTRY=in
 ```
 
 External jobs are not stored in MongoDB by default. They are fetched from Adzuna and shown as external results with source links.
+
+## AI Career Assistant
+
+The project includes an AI Career Assistant page at:
+
+```text
+/ai-assistant
+```
+
+It helps users review their fit for a target role or a selected job. It returns:
+
+- Job-fit score.
+- Strengths.
+- Missing skills or weak areas.
+- Resume improvement tips.
+- Next steps before applying.
+- Interview questions to prepare.
+
+If `OPENAI_API_KEY` is configured on the backend, the assistant uses the OpenAI Responses API. If the key is missing or the provider is unavailable, it falls back to the built-in smart advisor so the page still works in demos.
+
+Optional backend variables:
+
+```env
+OPENAI_API_KEY=your-openai-api-key
+OPENAI_MODEL=gpt-5-mini
+```
 
 ## Deployment Guide
 
@@ -378,6 +417,8 @@ CLOUDINARY_API_SECRET=your-cloudinary-api-secret
 ADZUNA_APP_ID=optional-adzuna-app-id
 ADZUNA_APP_KEY=optional-adzuna-app-key
 ADZUNA_COUNTRY=in
+OPENAI_API_KEY=optional-openai-api-key
+OPENAI_MODEL=gpt-5-mini
 ```
 
 Important:
@@ -412,12 +453,13 @@ After Vercel deploys, update Render `FRONTEND_URL` to the final Vercel productio
 ## Security Notes
 
 - Never commit real `.env` files.
-- Rotate MongoDB, Cloudinary, JWT, and Adzuna credentials if they were ever exposed in Git history.
+- Rotate MongoDB, Cloudinary, JWT, Adzuna, and OpenAI credentials if they were ever exposed in Git history.
 - Use long random values for `JWT_SECRET_KEY`.
 - Keep production cookies secure with `COOKIE_SECURE=true`.
 - Keep `COOKIE_SAME_SITE=none` only when frontend and backend are hosted on different domains.
 - Review MongoDB Atlas Network Access before using this for anything beyond a demo.
 - Render free instances can sleep, so production demos may have a cold-start delay.
+- Rotate OpenAI keys immediately if they are ever pasted into chat, screenshots, or Git history.
 
 ## Validation And Error Handling
 
@@ -490,6 +532,15 @@ Check:
 - `ADZUNA_APP_ID` and `ADZUNA_APP_KEY` are set on Render.
 - `ADZUNA_COUNTRY` is valid, for example `in`.
 - The backend was redeployed after adding environment variables.
+
+### AI Assistant Uses Smart Advisor Instead Of OpenAI
+
+Check:
+
+- `OPENAI_API_KEY` is set on Render backend.
+- `OPENAI_MODEL` is valid, for example `gpt-5-mini`.
+- The backend was redeployed after adding or changing OpenAI variables.
+- The OpenAI account has available API credits and access to the selected model.
 
 ### Vercel 404 On Refresh
 

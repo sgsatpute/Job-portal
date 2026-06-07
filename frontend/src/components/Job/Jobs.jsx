@@ -196,9 +196,18 @@ const Jobs = () => {
                   {formatSalary(job)}
                 </p>
               </div>
-              <Link to={`/job/${job._id}`} className="primary-btn mt-6">
-                View Details
-              </Link>
+              <div className="mt-6 grid gap-2 sm:grid-cols-2">
+                <Link to={`/job/${job._id}`} className="primary-btn">
+                  View Details
+                </Link>
+                <Link
+                  to="/ai-assistant"
+                  state={{ job }}
+                  className="secondary-btn"
+                >
+                  Ask AI
+                </Link>
+              </div>
             </article>
           ))}
         </div>

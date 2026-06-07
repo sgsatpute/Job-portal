@@ -27,6 +27,7 @@ const Navbar = () => {
   const navLinks = isAuthorized ? [
     { to: "/", label: "Home" },
     { to: "/job/getall", label: "Jobs" },
+    { to: "/ai-assistant", label: "AI Assistant" },
     { to: "/external-jobs", label: "External Jobs" },
     {
       to: "/applications/me",

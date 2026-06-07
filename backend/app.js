@@ -4,6 +4,7 @@ import jobRouter from "./routes/jobRoutes.js";
 import userRouter from "./routes/userRoutes.js";
 import applicationRouter from "./routes/applicationRoutes.js";
 import externalJobRouter from "./routes/externalJobRoutes.js";
+import aiRouter from "./routes/aiRoutes.js";
 import { config } from "dotenv";
 import cors from "cors";
 import { errorMiddleware } from "./middlewares/error.js";
@@ -61,6 +62,7 @@ app.use("/api/v1/user", userRouter);
 app.use("/api/v1/job", jobRouter);
 app.use("/api/v1/application", applicationRouter);
 app.use("/api/v1/external-jobs", externalJobRouter);
+app.use("/api/v1/ai", aiRouter);
 dbConnection();
 
 app.use(errorMiddleware);

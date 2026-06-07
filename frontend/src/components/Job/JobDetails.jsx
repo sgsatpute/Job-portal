@@ -67,11 +67,20 @@ const JobDetails = () => {
               <h1 className="mt-4 text-3xl font-bold text-slate-950">{job.title}</h1>
               <p className="mt-2 text-slate-600">{job.category}</p>
             </div>
-            {user?.role !== "Employer" && (
-              <Link to={`/application/${job._id}`} className="primary-btn">
-                Apply Now
+            <div className="flex flex-wrap gap-3">
+              <Link
+                to="/ai-assistant"
+                state={{ job }}
+                className="secondary-btn"
+              >
+                Ask AI
               </Link>
-            )}
+              {user?.role !== "Employer" && (
+                <Link to={`/application/${job._id}`} className="primary-btn">
+                  Apply Now
+                </Link>
+              )}
+            </div>
           </div>
         </div>
 

@@ -19,6 +19,7 @@ import api from "./utils/api";
 import ProtectedRoute from "./components/Shared/ProtectedRoute";
 import Profile from "./components/Profile/Profile";
 import ExternalJobs from "./components/ExternalJobs/ExternalJobs";
+import AIAdvisor from "./components/AI/AIAdvisor";
 
 const App = () => {
   const { setAuthLoading, setIsAuthorized, setUser } = useContext(Context);
@@ -51,6 +52,14 @@ const App = () => {
           <Route
             path="/job/getall"
             element={<Jobs />}
+          />
+          <Route
+            path="/ai-assistant"
+            element={
+              <ProtectedRoute>
+                <AIAdvisor />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/external-jobs"
