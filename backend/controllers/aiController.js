@@ -954,16 +954,28 @@ export const analyzeResume = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("Upload a PDF resume before running analysis.", 400));
   }
 
-  if (!fullUser.resumeText) {
+  const profileFallbackText = normalizeText(
+    [
+      fullUser.profile?.headline,
+      fullUser.profile?.skills,
+      fullUser.profile?.experience,
+      fullUser.profile?.education,
+    ].join(" "),
+    "",
+    MAX_RESUME_CONTEXT_LENGTH
+  );
+  const analysisText = fullUser.resumeText || profileFallbackText;
+
+  if (!analysisText) {
     return next(
       new ErrorHandler(
-        "Resume uploaded, but text could not be extracted. Re-upload a text-based PDF resume.",
+        "Resume uploaded, but text could not be extracted. Add profile skills and experience or re-upload a text-based PDF resume.",
         400
       )
     );
   }
 
-  const userContext = buildUserContext(fullUser, fullUser.resumeText);
+  const userContext = buildUserContext(fullUser, analysisText);
   const fallback = buildResumeAnalysisFallback(userContext);
   const aiResult = await generateStructuredResult({
     system:
@@ -975,11 +987,14 @@ export const analyzeResume = catchAsyncErrors(async (req, res, next) => {
     fallback,
     maxTokens: 1300,
   });
+  const extractionWarning = !fullUser.resumeText
+    ? "Resume text could not be extracted, so JobPortal analyzed your profile details instead."
+    : "";
 
   res.status(200).json({
     success: true,
     provider: aiResult.provider,
-    warning: aiResult.warning,
+    warning: [extractionWarning, aiResult.warning].filter(Boolean).join(" "),
     analysis: normalizeResumeAnalysis(aiResult.result, fallback),
   });
 });
