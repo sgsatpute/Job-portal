@@ -4,6 +4,10 @@ import ErrorHandler from "../middlewares/error.js";
 import { getCookieOptions, sendToken } from "../utils/jwtToken.js";
 import cloudinary from "cloudinary";
 import validator from "validator";
+import fs from "fs/promises";
+import pdfParse from "pdf-parse";
+
+const MAX_RESUME_TEXT_LENGTH = 12000;
 
 const validateAuthFields = ({ name, email, phone, password, role }, isRegister) => {
   if (isRegister && (!name || !email || !phone || !password || !role)) {
@@ -28,6 +32,19 @@ const validateAuthFields = ({ name, email, phone, password, role }, isRegister) 
     return "Please select a valid role.";
   }
   return null;
+};
+
+const extractResumeText = async (filePath) => {
+  try {
+    const buffer = await fs.readFile(filePath);
+    const parsedPdf = await pdfParse(buffer);
+    return String(parsedPdf.text || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, MAX_RESUME_TEXT_LENGTH);
+  } catch (error) {
+    return "";
+  }
 };
 
 export const register = catchAsyncErrors(async (req, res, next) => {
@@ -129,6 +146,9 @@ export const updateProfile = catchAsyncErrors(async (req, res, next) => {
     companyName: profile.companyName?.trim() || "",
     companyWebsite: profile.companyWebsite?.trim() || "",
     companyDescription: profile.companyDescription?.trim() || "",
+    skills: profile.skills?.trim() || "",
+    experience: profile.experience?.trim() || "",
+    education: profile.education?.trim() || "",
   };
 
   if (
@@ -188,6 +208,8 @@ export const uploadResume = catchAsyncErrors(async (req, res, next) => {
     });
   }
 
+  const resumeText = await extractResumeText(resume.tempFilePath);
+
   const cloudinaryResponse = await cloudinary.v2.uploader.upload(
     resume.tempFilePath,
     {
@@ -209,6 +231,7 @@ export const uploadResume = catchAsyncErrors(async (req, res, next) => {
         public_id: cloudinaryResponse.public_id,
         url: cloudinaryResponse.secure_url,
       },
+      resumeText,
     },
     { new: true, runValidators: true }
   );

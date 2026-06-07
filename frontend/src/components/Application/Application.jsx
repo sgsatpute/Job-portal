@@ -1,4 +1,5 @@
 import { useContext, useEffect, useState } from "react";
+import { FaMagic } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { useNavigate, useParams } from "react-router-dom";
 import { Context } from "../../main";
@@ -15,6 +16,7 @@ const Application = () => {
   });
   const [resume, setResume] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [coverLetterLoading, setCoverLetterLoading] = useState(false);
   const [fileError, setFileError] = useState("");
 
   const navigateTo = useNavigate();
@@ -79,6 +81,22 @@ const Application = () => {
       return false;
     }
     return true;
+  };
+
+  const generateCoverLetter = async () => {
+    setCoverLetterLoading(true);
+    try {
+      const { data } = await api.post(`/ai/cover-letter/${id}`, {
+        notes: form.address,
+      });
+      updateField("coverLetter", data.coverLetter.coverLetter);
+      if (data.warning) toast(data.warning);
+      else toast.success("Cover letter generated.");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Unable to generate cover letter."));
+    } finally {
+      setCoverLetterLoading(false);
+    }
   };
 
   const handleApplication = async (e) => {
@@ -165,7 +183,18 @@ const Application = () => {
         </div>
 
         <label className="block">
-          <span className="field-label">Cover Letter</span>
+          <span className="flex items-center justify-between gap-3">
+            <span className="field-label">Cover Letter</span>
+            <button
+              type="button"
+              onClick={generateCoverLetter}
+              className="secondary-btn px-3 py-2"
+              disabled={coverLetterLoading}
+            >
+              <FaMagic />
+              {coverLetterLoading ? "Generating..." : "Generate"}
+            </button>
+          </span>
           <textarea
             rows="7"
             value={form.coverLetter}

@@ -72,6 +72,18 @@ const AIAdvisor = () => {
     }));
   }, [state]);
 
+  useEffect(() => {
+    setForm((current) => ({
+      ...current,
+      skills: current.skills || user?.profile?.skills || "",
+      experience:
+        current.experience ||
+        user?.profile?.experience ||
+        user?.profile?.education ||
+        "",
+    }));
+  }, [user]);
+
   const updateField = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }));
   };

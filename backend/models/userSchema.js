@@ -38,6 +38,11 @@ const userSchema = new mongoose.Schema({
       type: String,
     },
   },
+  resumeText: {
+    type: String,
+    maxLength: [12000, "Resume text cannot exceed 12000 characters!"],
+    select: false,
+  },
   profile: {
     headline: {
       type: String,
@@ -58,6 +63,18 @@ const userSchema = new mongoose.Schema({
     companyDescription: {
       type: String,
       maxLength: [500, "Company description cannot exceed 500 characters!"],
+    },
+    skills: {
+      type: String,
+      maxLength: [900, "Skills cannot exceed 900 characters!"],
+    },
+    experience: {
+      type: String,
+      maxLength: [1200, "Experience cannot exceed 1200 characters!"],
+    },
+    education: {
+      type: String,
+      maxLength: [500, "Education cannot exceed 500 characters!"],
     },
   },
   createdAt: {

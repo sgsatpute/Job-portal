@@ -1,10 +1,16 @@
 import { useCallback, useContext, useEffect, useState } from "react";
-import { FaExternalLinkAlt, FaFilePdf, FaTrash } from "react-icons/fa";
+import { FaExternalLinkAlt, FaFilePdf, FaRobot, FaTrash } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { Context } from "../../main";
 import api, { getErrorMessage } from "../../utils/api";
 import LoadingSpinner from "../Shared/LoadingSpinner";
 import StatusBadge from "../Shared/StatusBadge";
+import {
+  AIWarning,
+  ListBlock,
+  ProviderBadge,
+  ScoreBlock,
+} from "../AI/AIResultBlocks";
 
 const statuses = ["Pending", "Shortlisted", "Rejected"];
 
@@ -25,6 +31,8 @@ const MyApplications = () => {
   const [loading, setLoading] = useState(true);
   const [resumeFile, setResumeFile] = useState(null);
   const [resumeUploading, setResumeUploading] = useState(false);
+  const [resumeAnalysis, setResumeAnalysis] = useState(null);
+  const [resumeAnalyzing, setResumeAnalyzing] = useState(false);
 
   const fetchApplications = useCallback(async () => {
     setLoading(true);
@@ -98,10 +106,25 @@ const MyApplications = () => {
       toast.success(data.message);
       setUser((current) => ({ ...current, resume: data.resume }));
       setResumeFile(null);
+      setResumeAnalysis(null);
     } catch (error) {
       toast.error(getErrorMessage(error, "Unable to upload resume."));
     } finally {
       setResumeUploading(false);
+    }
+  };
+
+  const analyzeProfileResume = async () => {
+    setResumeAnalyzing(true);
+    try {
+      const { data } = await api.post("/ai/resume-analysis");
+      setResumeAnalysis(data);
+      if (data.warning) toast(data.warning);
+      else toast.success("Resume analysis generated.");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Unable to analyze resume."));
+    } finally {
+      setResumeAnalyzing(false);
     }
   };
 
@@ -174,16 +197,31 @@ const MyApplications = () => {
                 onChange={handleResumeFileChange}
                 className="block w-full text-sm text-slate-600 file:mr-4 file:rounded-lg file:border-0 file:bg-brand-50 file:px-4 file:py-2.5 file:text-sm file:font-semibold file:text-brand-700"
               />
-              <button
-                type="submit"
-                className="primary-btn"
-                disabled={resumeUploading}
-              >
-                {resumeUploading ? "Uploading..." : "Upload Resume"}
-              </button>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <button
+                  type="submit"
+                  className="primary-btn"
+                  disabled={resumeUploading}
+                >
+                  {resumeUploading ? "Uploading..." : "Upload Resume"}
+                </button>
+                <button
+                  type="button"
+                  onClick={analyzeProfileResume}
+                  className="secondary-btn"
+                  disabled={!user?.resume?.url || resumeAnalyzing}
+                >
+                  <FaRobot />
+                  {resumeAnalyzing ? "Analyzing..." : "Analyze Resume"}
+                </button>
+              </div>
             </form>
           </div>
         </section>
+
+        {resumeAnalysis && (
+          <ResumeAnalysisPanel result={resumeAnalysis} />
+        )}
 
         <div className="mb-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard label="Total Applications" value={stats.totalApplications} />
@@ -248,6 +286,46 @@ const StatCard = ({ label, value }) => (
   </div>
 );
 
+const ResumeAnalysisPanel = ({ result }) => {
+  const analysis = result.analysis;
+
+  return (
+    <section className="card-surface mb-8 p-6">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-slate-950">AI Resume Analysis</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            {analysis.summary}
+          </p>
+        </div>
+        <ProviderBadge provider={result.provider} />
+      </div>
+      <AIWarning warning={result.warning} />
+      <div className="mt-5 grid gap-4 lg:grid-cols-[220px_1fr]">
+        <div className="space-y-4">
+          <ScoreBlock label="Resume Score" value={analysis.score} />
+          <div className="rounded-lg bg-slate-50 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Level
+            </p>
+            <p className="mt-2 text-lg font-bold text-slate-950">
+              {analysis.level}
+            </p>
+          </div>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <ListBlock title="Detected Skills" items={analysis.detectedSkills} />
+          <ListBlock title="Strengths" items={analysis.strengths} />
+          <ListBlock title="Issues" items={analysis.issues} />
+          <ListBlock title="Improvements" items={analysis.improvements} />
+          <ListBlock title="Keyword Suggestions" items={analysis.keywordSuggestions} />
+          <ListBlock title="Next Steps" items={analysis.nextSteps} />
+        </div>
+      </div>
+    </section>
+  );
+};
+
 const JobSeekerCard = ({ application, deleteApplication }) => {
   const job = application.jobID;
   const employer = application.employerID?.user;
@@ -310,6 +388,22 @@ const JobSeekerCard = ({ application, deleteApplication }) => {
 
 const EmployerCard = ({ application, updateApplicationStatus }) => {
   const job = application.jobID;
+  const [aiSummary, setAiSummary] = useState(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+
+  const summarizeCandidate = async () => {
+    setSummaryLoading(true);
+    try {
+      const { data } = await api.get(`/ai/application-summary/${application._id}`);
+      setAiSummary(data);
+      if (data.warning) toast(data.warning);
+      else toast.success("Candidate summary generated.");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Unable to summarize candidate."));
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
 
   return (
     <article className="card-surface p-6">
@@ -358,6 +452,15 @@ const EmployerCard = ({ application, updateApplicationStatus }) => {
             <FaExternalLinkAlt />
             Resume
           </a>
+          <button
+            type="button"
+            onClick={summarizeCandidate}
+            className="secondary-btn"
+            disabled={summaryLoading}
+          >
+            <FaRobot />
+            {summaryLoading ? "Summarizing..." : "AI Summary"}
+          </button>
           <label>
             <span className="field-label">Status</span>
             <select
@@ -376,6 +479,43 @@ const EmployerCard = ({ application, updateApplicationStatus }) => {
           </label>
         </div>
       </div>
+      {aiSummary && (
+        <div className="mt-5 rounded-lg border border-brand-100 bg-brand-50/40 p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-slate-950">
+                Candidate AI Summary
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-slate-700">
+                {aiSummary.summary.summary}
+              </p>
+            </div>
+            <ProviderBadge provider={aiSummary.provider} />
+          </div>
+          <AIWarning warning={aiSummary.warning} />
+          <div className="mt-4 grid gap-4 md:grid-cols-[180px_1fr_1fr]">
+            <ScoreBlock label="Fit Score" value={aiSummary.summary.fitScore} />
+            <ListBlock title="Strengths" items={aiSummary.summary.strengths} />
+            <ListBlock title="Concerns" items={aiSummary.summary.concerns} />
+          </div>
+          <div className="mt-4 grid gap-4 md:grid-cols-3">
+            <ListBlock
+              title="Resume Highlights"
+              items={aiSummary.summary.resumeHighlights}
+            />
+            <ListBlock
+              title="Interview Focus"
+              items={aiSummary.summary.interviewFocus}
+            />
+            <div className="rounded-lg bg-white p-4">
+              <h4 className="text-sm font-bold text-slate-950">Recommendation</h4>
+              <p className="mt-3 text-sm leading-6 text-slate-700">
+                {aiSummary.summary.recommendation}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </article>
   );
 };

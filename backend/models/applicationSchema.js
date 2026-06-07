@@ -35,6 +35,11 @@ const applicationSchema = new mongoose.Schema({
       required: true,
     },
   },
+  resumeText: {
+    type: String,
+    maxLength: [12000, "Resume text cannot exceed 12000 characters!"],
+    select: false,
+  },
   status: {
     type: String,
     enum: ["Pending", "Shortlisted", "Rejected"],

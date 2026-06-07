@@ -9,6 +9,9 @@ const emptyProfile = {
   companyName: "",
   companyWebsite: "",
   companyDescription: "",
+  skills: "",
+  experience: "",
+  education: "",
 };
 
 const Profile = () => {
@@ -182,6 +185,56 @@ const Profile = () => {
                 placeholder="Short description shown in employer workflows."
               />
             </label>
+          </section>
+        )}
+
+        {user?.role === "Job Seeker" && (
+          <section className="rounded-lg border border-slate-200 bg-slate-50 p-5">
+            <h2 className="text-lg font-bold text-slate-950">Career Details</h2>
+
+            <label className="mt-5 block">
+              <span className="field-label">Skills</span>
+              <textarea
+                rows="4"
+                className="field mt-2"
+                value={form.profile.skills}
+                onChange={(event) =>
+                  updateProfileField("skills", event.target.value)
+                }
+                placeholder="React, Node.js, MongoDB, Express, Tailwind CSS"
+                maxLength={900}
+              />
+            </label>
+
+            <div className="mt-5 grid gap-5 md:grid-cols-2">
+              <label>
+                <span className="field-label">Experience / Projects</span>
+                <textarea
+                  rows="5"
+                  className="field mt-2"
+                  value={form.profile.experience}
+                  onChange={(event) =>
+                    updateProfileField("experience", event.target.value)
+                  }
+                  placeholder="Projects, internships, responsibilities, results"
+                  maxLength={1200}
+                />
+              </label>
+
+              <label>
+                <span className="field-label">Education</span>
+                <textarea
+                  rows="5"
+                  className="field mt-2"
+                  value={form.profile.education}
+                  onChange={(event) =>
+                    updateProfileField("education", event.target.value)
+                  }
+                  placeholder="Degree, college, CGPA, certifications"
+                  maxLength={500}
+                />
+              </label>
+            </div>
           </section>
         )}
 

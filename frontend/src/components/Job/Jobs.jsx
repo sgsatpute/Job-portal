@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
-import { FaFilter, FaSearch } from "react-icons/fa";
+import { useContext, useEffect, useState } from "react";
+import { FaFilter, FaRobot, FaSearch } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import { Context } from "../../main";
 import api, { getErrorMessage } from "../../utils/api";
 import LoadingSpinner from "../Shared/LoadingSpinner";
 
@@ -26,6 +27,8 @@ const formatSalary = (job) => {
 const Jobs = () => {
   const [jobs, setJobs] = useState([]);
   const [locations, setLocations] = useState([]);
+  const [jobMatches, setJobMatches] = useState({});
+  const [matchesLoading, setMatchesLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [initialLoad, setInitialLoad] = useState(true);
   const [page, setPage] = useState(1);
@@ -41,6 +44,7 @@ const Jobs = () => {
     location: "all",
     salaryRange: "all",
   });
+  const { isAuthorized, user } = useContext(Context);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -80,6 +84,41 @@ const Jobs = () => {
       controller.abort();
     };
   }, [filters, page, pagination.limit]);
+
+  useEffect(() => {
+    if (!isAuthorized || user?.role !== "Job Seeker" || jobs.length === 0) {
+      setJobMatches({});
+      return;
+    }
+
+    const controller = new AbortController();
+    const fetchMatches = async () => {
+      setMatchesLoading(true);
+      const results = await Promise.allSettled(
+        jobs.map((job) =>
+          api.get(`/ai/job-match/${job._id}`, {
+            signal: controller.signal,
+          })
+        )
+      );
+      if (controller.signal.aborted) return;
+
+      const nextMatches = {};
+      results.forEach((result, index) => {
+        if (result.status === "fulfilled") {
+          nextMatches[jobs[index]._id] = result.value.data.match;
+        }
+      });
+      setJobMatches(nextMatches);
+      setMatchesLoading(false);
+    };
+
+    fetchMatches();
+
+    return () => {
+      controller.abort();
+    };
+  }, [isAuthorized, jobs, user?.role]);
 
   const updateFilter = (key, value) => {
     setPage(1);
@@ -196,6 +235,28 @@ const Jobs = () => {
                   {formatSalary(job)}
                 </p>
               </div>
+              {isAuthorized && user?.role === "Job Seeker" && (
+                <div className="mt-4 rounded-lg bg-slate-50 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-brand-700">
+                      <FaRobot />
+                      AI Match
+                    </span>
+                    <span className="text-sm font-bold text-slate-950">
+                      {matchesLoading && !jobMatches[job._id]
+                        ? "Checking..."
+                        : jobMatches[job._id]
+                          ? `${jobMatches[job._id].matchScore}%`
+                          : "Profile needed"}
+                    </span>
+                  </div>
+                  {jobMatches[job._id]?.matchingSkills?.length > 0 && (
+                    <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-600">
+                      {jobMatches[job._id].matchingSkills.slice(0, 3).join(", ")}
+                    </p>
+                  )}
+                </div>
+              )}
               <div className="mt-6 grid gap-2 sm:grid-cols-2">
                 <Link to={`/job/${job._id}`} className="primary-btn">
                   View Details

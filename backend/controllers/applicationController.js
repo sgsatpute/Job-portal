@@ -2,10 +2,14 @@ import { catchAsyncErrors } from "../middlewares/catchAsyncError.js";
 import ErrorHandler from "../middlewares/error.js";
 import { Application } from "../models/applicationSchema.js";
 import { Job } from "../models/jobSchema.js";
+import { User } from "../models/userSchema.js";
 import cloudinary from "cloudinary";
 import validator from "validator";
+import fs from "fs/promises";
+import pdfParse from "pdf-parse";
 
 const APPLICATION_STATUSES = ["Pending", "Shortlisted", "Rejected"];
+const MAX_RESUME_TEXT_LENGTH = 12000;
 
 const validateApplicationFields = ({ name, email, coverLetter, phone, address }) => {
   if (!name || !email || !coverLetter || !phone || !address) {
@@ -26,6 +30,19 @@ const validateApplicationFields = ({ name, email, coverLetter, phone, address })
   return null;
 };
 
+const extractResumeText = async (filePath) => {
+  try {
+    const buffer = await fs.readFile(filePath);
+    const parsedPdf = await pdfParse(buffer);
+    return String(parsedPdf.text || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, MAX_RESUME_TEXT_LENGTH);
+  } catch (error) {
+    return "";
+  }
+};
+
 const uploadPdfResume = async (resume) => {
   if (resume.mimetype !== "application/pdf") {
     throw new ErrorHandler("Only PDF resume files are allowed.", 400);
@@ -35,6 +52,7 @@ const uploadPdfResume = async (resume) => {
     throw new ErrorHandler("Resume file size must be 5MB or less.", 400);
   }
 
+  const resumeText = await extractResumeText(resume.tempFilePath);
   const cloudinaryResponse = await cloudinary.v2.uploader.upload(
     resume.tempFilePath,
     {
@@ -52,6 +70,7 @@ const uploadPdfResume = async (resume) => {
   return {
     public_id: cloudinaryResponse.public_id,
     url: cloudinaryResponse.secure_url,
+    text: resumeText,
   };
 };
 
@@ -86,9 +105,16 @@ export const postApplication = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("You have already applied for this job.", 400));
   }
 
-  let resumeToSave = req.user.resume?.url ? req.user.resume : null;
+  const fullUser = await User.findById(req.user._id).select("+resumeText");
+  let resumeTextToSave = fullUser?.resumeText || "";
+  let resumeToSave = fullUser?.resume?.url ? fullUser.resume : null;
   if (req.files?.resume) {
-    resumeToSave = await uploadPdfResume(req.files.resume);
+    const uploadedResume = await uploadPdfResume(req.files.resume);
+    resumeTextToSave = uploadedResume.text;
+    resumeToSave = {
+      public_id: uploadedResume.public_id,
+      url: uploadedResume.url,
+    };
   }
 
   if (!resumeToSave?.url) {
@@ -111,6 +137,7 @@ export const postApplication = catchAsyncErrors(async (req, res, next) => {
       role: "Employer",
     },
     resume: resumeToSave,
+    resumeText: resumeTextToSave,
   });
 
   res.status(201).json({

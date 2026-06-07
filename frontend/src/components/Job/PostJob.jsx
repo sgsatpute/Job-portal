@@ -1,7 +1,9 @@
 import { useContext, useState } from "react";
+import { FaMagic } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { Context } from "../../main";
 import api, { getErrorMessage } from "../../utils/api";
+import { AIWarning, ListBlock, ProviderBadge } from "../AI/AIResultBlocks";
 
 const categories = [
   "Graphics & Design",
@@ -28,6 +30,7 @@ const initialForm = {
   salaryTo: "",
   fixedSalary: "",
   salaryType: "",
+  skills: "",
 };
 
 const TITLE_MAX_LENGTH = 30;
@@ -36,6 +39,8 @@ const DESCRIPTION_MAX_LENGTH = 500;
 const PostJob = () => {
   const [form, setForm] = useState(initialForm);
   const [loading, setLoading] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiDraft, setAiDraft] = useState(null);
   const { user } = useContext(Context);
 
   const updateField = (field, value) => {
@@ -123,6 +128,39 @@ const PostJob = () => {
       toast.error(getErrorMessage(error, "Unable to post job."));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const generateJobDescription = async () => {
+    if (form.title.trim().length < 3) {
+      toast.error("Enter a job title before using AI.");
+      return;
+    }
+
+    setAiLoading(true);
+    try {
+      const salary =
+        form.salaryType === "Fixed Salary"
+          ? form.fixedSalary
+          : [form.salaryFrom, form.salaryTo].filter(Boolean).join(" - ");
+      const { data } = await api.post("/ai/job-description", {
+        title: form.title,
+        category: form.category,
+        jobType: form.jobType,
+        country: form.country,
+        city: form.city,
+        location: form.location,
+        skills: form.skills,
+        salary,
+      });
+      setAiDraft(data);
+      updateField("description", data.draft.description);
+      if (data.warning) toast(data.warning);
+      else toast.success("Job description generated.");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Unable to generate job description."));
+    } finally {
+      setAiLoading(false);
     }
   };
 
@@ -265,7 +303,30 @@ const PostJob = () => {
         </label>
 
         <label className="block">
-          <span className="field-label">Job Description</span>
+          <span className="field-label">Key Skills</span>
+          <textarea
+            rows="3"
+            value={form.skills}
+            onChange={(e) => updateField("skills", e.target.value)}
+            className="field mt-2"
+            placeholder="React, Node.js, MongoDB, Express"
+            maxLength={500}
+          />
+        </label>
+
+        <label className="block">
+          <span className="flex items-center justify-between gap-3">
+            <span className="field-label">Job Description</span>
+            <button
+              type="button"
+              onClick={generateJobDescription}
+              className="secondary-btn px-3 py-2"
+              disabled={aiLoading}
+            >
+              <FaMagic />
+              {aiLoading ? "Generating..." : "Generate"}
+            </button>
+          </span>
           <textarea
             rows="8"
             value={form.description}
@@ -275,6 +336,33 @@ const PostJob = () => {
             maxLength={DESCRIPTION_MAX_LENGTH}
           />
         </label>
+
+        {aiDraft && (
+          <section className="rounded-lg border border-brand-100 bg-brand-50/40 p-5">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <h2 className="text-lg font-bold text-slate-950">
+                AI Job Draft
+              </h2>
+              <ProviderBadge provider={aiDraft.provider} />
+            </div>
+            <AIWarning warning={aiDraft.warning} />
+            <div className="grid gap-4 md:grid-cols-2">
+              <ListBlock
+                title="Responsibilities"
+                items={aiDraft.draft.responsibilities}
+              />
+              <ListBlock title="Requirements" items={aiDraft.draft.requirements} />
+              <ListBlock title="Skills" items={aiDraft.draft.skills} />
+              <ListBlock
+                title="Screening Questions"
+                items={aiDraft.draft.screeningQuestions}
+              />
+            </div>
+            <p className="mt-4 rounded-lg bg-white p-4 text-sm font-semibold text-slate-700">
+              Salary: {aiDraft.draft.salarySuggestion}
+            </p>
+          </section>
+        )}
 
         <button type="submit" className="primary-btn w-full" disabled={loading}>
           {loading ? "Creating Job..." : "Create Job"}

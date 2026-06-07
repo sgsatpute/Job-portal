@@ -78,6 +78,12 @@ JobPortal has two user roles:
 - Job seeker dashboard with total applications and status counts.
 - Employer dashboard with total jobs posted and total applications received.
 - AI Career Assistant for job-fit scoring, resume tips, gaps, next steps, and interview questions.
+- AI resume analyzer with PDF text extraction, resume score, strengths, issues, and keyword suggestions.
+- AI job match scores on job cards for signed-in job seekers.
+- AI cover letter generator from the application form.
+- AI skill gap roadmap and interview question generator from job details.
+- Employer AI candidate summary for received applications.
+- Employer AI job description generator while posting jobs.
 - External live jobs integration through Adzuna API.
 - Tailwind CSS UI.
 - Responsive navbar with `JobPortal` branding.
@@ -96,7 +102,7 @@ JobPortal has two user roles:
 | Frontend | React 18, Vite, React Router, Tailwind CSS, Axios, React Icons, react-hot-toast |
 | Backend | Node.js, Express.js, Mongoose, JWT, bcrypt, validator |
 | Database | MongoDB Atlas or local MongoDB |
-| File Uploads | express-fileupload, Cloudinary |
+| File Uploads | express-fileupload, Cloudinary, pdf-parse |
 | AI | Gemini API free tier, optional OpenAI Responses API, smart fallback advisor |
 | External Jobs | Adzuna Jobs API, optional |
 | Deployment | Vercel for frontend, Render for backend |
@@ -335,6 +341,15 @@ limit=9
 | Method | Route | Auth | Description |
 | --- | --- | --- | --- |
 | POST | `/ai/career-advice` | Required | Generate job-fit advice, resume tips, next steps, and interview questions |
+| POST | `/ai/resume-analysis` | Job Seeker | Analyze uploaded PDF resume text |
+| GET | `/ai/job-match/:id` | Job Seeker | Generate a quick or provider-backed job match score |
+| POST | `/ai/cover-letter/:id` | Job Seeker | Generate a cover letter for a job |
+| GET | `/ai/interview-questions/:id` | Required | Generate job-specific interview questions |
+| GET | `/ai/skill-roadmap/:id` | Job Seeker | Generate a skill gap roadmap |
+| GET | `/ai/application-summary/:id` | Employer | Summarize a candidate application |
+| POST | `/ai/job-description` | Employer | Generate a job description draft |
+
+For job card match scores, `/ai/job-match/:id` uses the built-in smart matcher by default. Add `?generate=true` for a provider-backed Gemini/OpenAI match report from the job detail page.
 
 Supported query parameters:
 
@@ -359,7 +374,7 @@ ADZUNA_COUNTRY=in
 
 External jobs are not stored in MongoDB by default. They are fetched from Adzuna and shown as external results with source links.
 
-## AI Career Assistant
+## AI Placement Tools
 
 The project includes an AI Career Assistant page at:
 
@@ -375,6 +390,15 @@ It helps users review their fit for a target role or a selected job. It returns:
 - Resume improvement tips.
 - Next steps before applying.
 - Interview questions to prepare.
+
+Additional AI features are integrated into the user workflows:
+
+- Resume analyzer on the job seeker dashboard.
+- Match score on job cards and a deeper match report on job details.
+- Cover letter generator on the application form.
+- Skill roadmap and interview questions on job details.
+- Candidate summary on the employer applications page.
+- Job description generator on the employer post job page.
 
 The recommended free setup is Gemini API from Google AI Studio. If `GEMINI_API_KEY` is configured on the backend, the assistant uses Gemini. If Gemini is not configured, it can use OpenAI when `OPENAI_API_KEY` is available. If no AI provider is configured or the provider is unavailable, it falls back to the built-in smart advisor so the page still works in demos.
 
@@ -564,7 +588,6 @@ The frontend includes `frontend/vercel.json` with a rewrite to `index.html`. Mak
 - Saved jobs for job seekers.
 - Employer applicant notes.
 - Email notifications for shortlisted/rejected status.
-- Resume parsing and skills extraction.
 - Job recommendation engine.
 - Public landing page that does not require login.
 - Seed script for demo users and demo jobs.
