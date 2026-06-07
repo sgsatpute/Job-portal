@@ -270,6 +270,26 @@ const isValidStructuredResponse = (value, requiredKeys) =>
 const buildJsonInstruction = (requiredKeys) =>
   `Return only valid JSON. Required top-level keys: ${requiredKeys.join(", ")}. Use concise, practical values.`;
 
+const getUniqueValues = (values) =>
+  values.filter((value, index, list) => value && list.indexOf(value) === index);
+
+const readProviderError = async (response) => {
+  const body = await response.text().catch(() => "");
+  return body ? `: ${body.slice(0, 240)}` : "";
+};
+
+const logAIProviderErrors = (errors) => {
+  if (!errors.length) return;
+
+  console.warn(
+    "[ai] provider fallback",
+    errors.map((error) => ({
+      provider: error.provider,
+      message: error.message,
+    }))
+  );
+};
+
 const callOpenAIStructured = async ({ system, prompt, requiredKeys, maxTokens }) => {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
@@ -290,7 +310,11 @@ const callOpenAIStructured = async ({ system, prompt, requiredKeys, maxTokens })
   });
 
   if (!response.ok) {
-    throw new Error(`OpenAI returned ${response.status}`);
+    throw new Error(
+      `OpenAI ${model} returned ${response.status}${await readProviderError(
+        response
+      )}`
+    );
   }
 
   const payload = await response.json();
@@ -303,11 +327,14 @@ const callOpenAIStructured = async ({ system, prompt, requiredKeys, maxTokens })
   return parsed;
 };
 
-const callGeminiStructured = async ({ system, prompt, requiredKeys, maxTokens }) => {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return null;
-
-  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const callGeminiModelStructured = async ({
+  apiKey,
+  model,
+  system,
+  prompt,
+  requiredKeys,
+  maxTokens,
+}) => {
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
     {
@@ -341,7 +368,11 @@ const callGeminiStructured = async ({ system, prompt, requiredKeys, maxTokens })
   );
 
   if (!response.ok) {
-    throw new Error(`Gemini returned ${response.status}`);
+    throw new Error(
+      `Gemini ${model} returned ${response.status}${await readProviderError(
+        response
+      )}`
+    );
   }
 
   const payload = await response.json();
@@ -352,6 +383,36 @@ const callGeminiStructured = async ({ system, prompt, requiredKeys, maxTokens })
   }
 
   return parsed;
+};
+
+const callGeminiStructured = async ({ system, prompt, requiredKeys, maxTokens }) => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return null;
+
+  const models = getUniqueValues([
+    process.env.GEMINI_MODEL,
+    "gemini-2.5-flash",
+    "gemini-2.5-flash-lite",
+    "gemini-2.0-flash",
+  ]);
+  const errors = [];
+
+  for (const model of models) {
+    try {
+      return await callGeminiModelStructured({
+        apiKey,
+        model,
+        system,
+        prompt,
+        requiredKeys,
+        maxTokens,
+      });
+    } catch (error) {
+      errors.push(error.message);
+    }
+  }
+
+  throw new Error(errors.join(" | "));
 };
 
 const generateStructuredResult = async ({
@@ -373,35 +434,51 @@ const generateStructuredResult = async ({
   let result = fallback;
   let provider = "smart-fallback";
   let warning = "";
+  const providerErrors = [];
 
-  try {
-    const geminiResult = await callGeminiStructured({
-      system,
-      prompt,
-      requiredKeys,
-      maxTokens,
-    });
-    const openAIResult = geminiResult
-      ? null
-      : await callOpenAIStructured({
-          system,
-          prompt,
-          requiredKeys,
-          maxTokens,
-        });
-    const providerResult = geminiResult || openAIResult;
+  const hasGeminiKey = Boolean(process.env.GEMINI_API_KEY);
+  const hasOpenAIKey = Boolean(process.env.OPENAI_API_KEY);
 
-    if (providerResult) {
-      result = {
-        ...fallback,
-        ...providerResult,
-      };
-      provider = geminiResult ? "gemini" : "openai";
-    } else {
-      warning =
-        "No AI API key is configured, so JobPortal used the built-in smart advisor.";
+  let geminiResult = null;
+  if (hasGeminiKey) {
+    try {
+      geminiResult = await callGeminiStructured({
+        system,
+        prompt,
+        requiredKeys,
+        maxTokens,
+      });
+    } catch (error) {
+      providerErrors.push({ provider: "gemini", message: error.message });
     }
-  } catch (error) {
+  }
+
+  let openAIResult = null;
+  if (!geminiResult && hasOpenAIKey) {
+    try {
+      openAIResult = await callOpenAIStructured({
+        system,
+        prompt,
+        requiredKeys,
+        maxTokens,
+      });
+    } catch (error) {
+      providerErrors.push({ provider: "openai", message: error.message });
+    }
+  }
+
+  const providerResult = geminiResult || openAIResult;
+  if (providerResult) {
+    result = {
+      ...fallback,
+      ...providerResult,
+    };
+    provider = geminiResult ? "gemini" : "openai";
+  } else if (!hasGeminiKey && !hasOpenAIKey) {
+    warning =
+      "No AI API key is configured, so JobPortal used the built-in smart advisor.";
+  } else {
+    logAIProviderErrors(providerErrors);
     warning =
       "AI provider was unavailable, so JobPortal used the built-in smart advisor.";
   }

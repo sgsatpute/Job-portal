@@ -205,5 +205,6 @@ export const uploadResume = catchAsyncErrors(async (req, res, next) => {
     success: true,
     message: "Resume uploaded successfully.",
     resume: updatedUser.resume,
+    resumeTextLength: uploadedResume.text.length,
   });
 });

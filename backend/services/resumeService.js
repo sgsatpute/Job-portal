@@ -1,6 +1,6 @@
 import cloudinary from "cloudinary";
 import fs from "fs/promises";
-import pdfParse from "pdf-parse/lib/pdf-parse.js";
+import { PDFParse } from "pdf-parse";
 import { RESUME_LIMITS } from "../constants/applicationConstants.js";
 import ErrorHandler from "../middlewares/error.js";
 
@@ -18,23 +18,60 @@ export const validatePdfResume = (resume) => {
   }
 };
 
-export const extractResumeText = async (filePath) => {
+const parseResumeBuffer = async (buffer) => {
+  let parser;
   try {
-    const buffer = await fs.readFile(filePath);
-    const parsedPdf = await pdfParse(buffer);
+    parser = new PDFParse({ data: buffer });
+    const parsedPdf = await parser.getText();
     return String(parsedPdf.text || "")
       .replace(/\s+/g, " ")
       .trim()
       .slice(0, RESUME_LIMITS.MAX_TEXT_LENGTH);
   } catch (error) {
     return "";
+  } finally {
+    await parser?.destroy?.();
   }
+};
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+export const extractResumeText = async (filePath) => {
+  try {
+    return parseResumeBuffer(await fs.readFile(filePath));
+  } catch (error) {
+    return "";
+  }
+};
+
+const extractUploadedResumeText = async (resume) => {
+  if (resume.tempFilePath) {
+    const tempText = await extractResumeText(resume.tempFilePath);
+    if (tempText) return tempText;
+
+    await wait(150);
+    const retryText = await extractResumeText(resume.tempFilePath);
+    if (retryText) return retryText;
+  }
+
+  if (resume.data?.length) {
+    const bufferText = await parseResumeBuffer(resume.data);
+    if (bufferText) return bufferText;
+  }
+
+  console.warn("[resume] PDF text extraction returned empty", {
+    fileName: resume.name,
+    size: resume.size,
+    hasTempFile: Boolean(resume.tempFilePath),
+    hasDataBuffer: Boolean(resume.data?.length),
+  });
+  return "";
 };
 
 export const uploadPdfResume = async (resume, folder) => {
   validatePdfResume(resume);
 
-  const resumeText = await extractResumeText(resume.tempFilePath);
+  const resumeText = await extractUploadedResumeText(resume);
   const cloudinaryResponse = await cloudinary.v2.uploader.upload(
     resume.tempFilePath,
     {
