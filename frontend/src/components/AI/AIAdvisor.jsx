@@ -43,6 +43,12 @@ const AdviceList = ({ title, items }) => (
   </div>
 );
 
+const providerLabels = {
+  gemini: "Gemini",
+  openai: "OpenAI",
+  "smart-fallback": "Smart advisor",
+};
+
 const AIAdvisor = () => {
   const { state } = useLocation();
   const { user } = useContext(Context);
@@ -262,7 +268,7 @@ const AIAdvisor = () => {
                     </p>
                   </div>
                   <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-brand-700">
-                    {result.provider === "openai" ? "OpenAI" : "Smart advisor"}
+                    {providerLabels[result.provider] || "AI advisor"}
                   </span>
                 </div>
                 <p className="mt-5 leading-7 text-slate-700">

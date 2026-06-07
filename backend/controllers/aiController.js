@@ -121,6 +121,12 @@ const extractOpenAIText = (payload) => {
     .trim();
 };
 
+const extractGeminiText = (payload) =>
+  (payload?.candidates?.[0]?.content?.parts || [])
+    .map((part) => part.text || "")
+    .join("\n")
+    .trim();
+
 const parseJsonResponse = (text) => {
   try {
     return JSON.parse(text);
@@ -170,6 +176,57 @@ const callOpenAI = async (context) => {
   return parsed;
 };
 
+const callGemini = async (context) => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return null;
+
+  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+  const prompt = [
+    "You are an expert Indian placement and career coach for a MERN job portal.",
+    "Return only valid JSON with keys: summary string, matchScore number from 0 to 100, strengths string array, gaps string array, nextSteps string array, resumeTips string array, interviewQuestions string array.",
+    "Be specific, practical, and concise.",
+    "",
+    "Career context:",
+    JSON.stringify(context),
+  ].join("\n");
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [{ text: prompt }],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.4,
+          maxOutputTokens: 900,
+          responseMimeType: "application/json",
+        },
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Gemini returned ${response.status}`);
+  }
+
+  const payload = await response.json();
+  const text = extractGeminiText(payload);
+  const parsed = parseJsonResponse(text);
+
+  if (!isValidAdvice(parsed)) {
+    throw new Error("Gemini response did not match the expected advice shape.");
+  }
+
+  return parsed;
+};
+
 export const generateCareerAdvice = catchAsyncErrors(async (req, res, next) => {
   const context = {
     userRole: req.user.role,
@@ -204,17 +261,23 @@ export const generateCareerAdvice = catchAsyncErrors(async (req, res, next) => {
   let warning = "";
 
   try {
-    const openAIAdvice = await callOpenAI(context);
-    if (openAIAdvice) {
+    const geminiAdvice = await callGemini(context);
+    const openAIAdvice = geminiAdvice ? null : await callOpenAI(context);
+    const providerAdvice = geminiAdvice || openAIAdvice;
+
+    if (providerAdvice) {
       advice = {
         ...fallbackAdvice,
-        ...openAIAdvice,
-        matchScore: Math.min(Math.max(Number(openAIAdvice.matchScore) || 0, 0), 100),
+        ...providerAdvice,
+        matchScore: Math.min(
+          Math.max(Number(providerAdvice.matchScore) || 0, 0),
+          100
+        ),
       };
-      provider = "openai";
+      provider = geminiAdvice ? "gemini" : "openai";
     } else {
       warning =
-        "OPENAI_API_KEY is not configured, so JobPortal used the built-in smart advisor.";
+        "No AI API key is configured, so JobPortal used the built-in smart advisor.";
     }
   } catch (error) {
     warning =

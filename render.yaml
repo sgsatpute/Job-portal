@@ -35,6 +35,10 @@ services:
         sync: false
       - key: ADZUNA_COUNTRY
         value: in
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
       - key: OPENAI_API_KEY
         sync: false
       - key: OPENAI_MODEL
