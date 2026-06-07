@@ -2,7 +2,6 @@ import { FaRobot } from "react-icons/fa";
 
 const providerLabels = {
   gemini: "Gemini",
-  openai: "OpenAI",
   "smart-fallback": "Smart advisor",
 };
 

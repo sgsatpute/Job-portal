@@ -35,7 +35,6 @@ const AdviceList = ({ title, items }) => (
 
 const providerLabels = {
   gemini: "Gemini",
-  openai: "OpenAI",
   "smart-fallback": "Smart advisor",
 };
 

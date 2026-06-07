@@ -103,7 +103,7 @@ JobPortal has two user roles:
 | Backend | Node.js, Express.js, Mongoose, JWT, bcrypt, validator |
 | Database | MongoDB Atlas or local MongoDB |
 | File Uploads | express-fileupload, Cloudinary, pdf-parse |
-| AI | Gemini API free tier, optional OpenAI Responses API, smart fallback advisor |
+| AI | Gemini API free tier, smart fallback advisor |
 | External Jobs | Adzuna Jobs API, optional |
 | Deployment | Vercel for frontend, Render for backend |
 | CI | GitHub Actions |
@@ -117,7 +117,6 @@ flowchart LR
   API --> MongoDB["MongoDB Atlas"]
   API --> Cloudinary["Cloudinary PDF Resume Storage"]
   API --> Gemini["Gemini API<br/>Free tier option"]
-  API --> OpenAI["OpenAI API<br/>Optional"]
   API --> Adzuna["Adzuna Jobs API<br/>Optional"]
 ```
 
@@ -197,8 +196,6 @@ ADZUNA_APP_KEY=optional-adzuna-app-key
 ADZUNA_COUNTRY=in
 GEMINI_API_KEY=optional-free-gemini-api-key
 GEMINI_MODEL=gemini-2.5-flash
-OPENAI_API_KEY=optional-openai-api-key
-OPENAI_MODEL=gpt-5-mini
 ```
 
 Start the backend:
@@ -352,7 +349,7 @@ limit=9
 | GET | `/ai/application-summary/:id` | Employer | Summarize a candidate application |
 | POST | `/ai/job-description` | Employer | Generate a job description draft |
 
-For job card match scores, `/ai/job-match/:id` uses the built-in smart matcher by default. Add `?generate=true` for a provider-backed Gemini/OpenAI match report from the job detail page.
+For job card match scores, `/ai/job-match/:id` uses the built-in smart matcher by default. Add `?generate=true` for a Gemini-backed match report from the job detail page.
 
 Supported query parameters:
 
@@ -403,20 +400,13 @@ Additional AI features are integrated into the user workflows:
 - Candidate summary on the employer applications page.
 - Job description generator on the employer post job page.
 
-The recommended free setup is Gemini API from Google AI Studio. If `GEMINI_API_KEY` is configured on the backend, the assistant uses Gemini. If Gemini is not configured, it can use OpenAI when `OPENAI_API_KEY` is available. If no AI provider is configured or the provider is unavailable, it falls back to the built-in smart advisor so the page still works in demos.
+The free setup is Gemini API from Google AI Studio. If `GEMINI_API_KEY` is configured on the backend, the assistant uses Gemini. If Gemini is not configured or the provider is unavailable, it falls back to the built-in smart advisor so the page still works in demos.
 
 Recommended free backend variables:
 
 ```env
 GEMINI_API_KEY=your-free-gemini-api-key
 GEMINI_MODEL=gemini-2.5-flash
-```
-
-Optional OpenAI backend variables:
-
-```env
-OPENAI_API_KEY=your-openai-api-key
-OPENAI_MODEL=gpt-5-mini
 ```
 
 ## Deployment Guide
@@ -456,8 +446,6 @@ ADZUNA_APP_KEY=optional-adzuna-app-key
 ADZUNA_COUNTRY=in
 GEMINI_API_KEY=optional-free-gemini-api-key
 GEMINI_MODEL=gemini-2.5-flash
-OPENAI_API_KEY=optional-openai-api-key
-OPENAI_MODEL=gpt-5-mini
 ```
 
 Important:
@@ -492,7 +480,7 @@ After Vercel deploys, update Render `FRONTEND_URL` to the final Vercel productio
 ## Security Notes
 
 - Never commit real `.env` files.
-- Rotate MongoDB, Cloudinary, JWT, Adzuna, Gemini, and OpenAI credentials if they were ever exposed in Git history.
+- Rotate MongoDB, Cloudinary, JWT, Adzuna, and Gemini credentials if they were ever exposed in Git history.
 - Use long random values for `JWT_SECRET_KEY`.
 - Keep production cookies secure with `COOKIE_SECURE=true`.
 - Keep `COOKIE_SAME_SITE=none` only when frontend and backend are hosted on different domains.

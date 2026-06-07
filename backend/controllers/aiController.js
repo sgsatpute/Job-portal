@@ -237,16 +237,6 @@ const buildUserContext = (user, resumeText = "") => ({
 const getUserWithResumeText = async (userId) =>
   User.findById(userId).select("+resumeText");
 
-const extractOpenAIText = (payload) => {
-  if (payload?.output_text) return payload.output_text;
-
-  return (payload?.output || [])
-    .flatMap((item) => item.content || [])
-    .map((content) => content.text || "")
-    .join("\n")
-    .trim();
-};
-
 const extractGeminiText = (payload) =>
   (payload?.candidates?.[0]?.content?.parts || [])
     .map((part) => part.text || "")
@@ -288,43 +278,6 @@ const logAIProviderErrors = (errors) => {
       message: error.message,
     }))
   );
-};
-
-const callOpenAIStructured = async ({ system, prompt, requiredKeys, maxTokens }) => {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return null;
-
-  const model = process.env.OPENAI_MODEL || "gpt-5-mini";
-  const response = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model,
-      instructions: [system, buildJsonInstruction(requiredKeys)].join("\n"),
-      input: prompt,
-      max_output_tokens: maxTokens,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(
-      `OpenAI ${model} returned ${response.status}${await readProviderError(
-        response
-      )}`
-    );
-  }
-
-  const payload = await response.json();
-  const parsed = parseJsonResponse(extractOpenAIText(payload));
-
-  if (!isValidStructuredResponse(parsed, requiredKeys)) {
-    throw new Error("OpenAI response did not match the expected shape.");
-  }
-
-  return parsed;
 };
 
 const callGeminiModelStructured = async ({
@@ -437,7 +390,6 @@ const generateStructuredResult = async ({
   const providerErrors = [];
 
   const hasGeminiKey = Boolean(process.env.GEMINI_API_KEY);
-  const hasOpenAIKey = Boolean(process.env.OPENAI_API_KEY);
 
   let geminiResult = null;
   if (hasGeminiKey) {
@@ -453,30 +405,15 @@ const generateStructuredResult = async ({
     }
   }
 
-  let openAIResult = null;
-  if (!geminiResult && hasOpenAIKey) {
-    try {
-      openAIResult = await callOpenAIStructured({
-        system,
-        prompt,
-        requiredKeys,
-        maxTokens,
-      });
-    } catch (error) {
-      providerErrors.push({ provider: "openai", message: error.message });
-    }
-  }
-
-  const providerResult = geminiResult || openAIResult;
-  if (providerResult) {
+  if (geminiResult) {
     result = {
       ...fallback,
-      ...providerResult,
+      ...geminiResult,
     };
-    provider = geminiResult ? "gemini" : "openai";
-  } else if (!hasGeminiKey && !hasOpenAIKey) {
+    provider = "gemini";
+  } else if (!hasGeminiKey) {
     warning =
-      "No AI API key is configured, so JobPortal used the built-in smart advisor.";
+      "No Gemini API key is configured, so JobPortal used the built-in smart advisor.";
   } else {
     logAIProviderErrors(providerErrors);
     warning =
