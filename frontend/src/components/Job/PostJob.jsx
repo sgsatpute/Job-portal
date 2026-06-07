@@ -4,19 +4,7 @@ import toast from "react-hot-toast";
 import { Context } from "../../main";
 import api, { getErrorMessage } from "../../utils/api";
 import { AIWarning, ListBlock, ProviderBadge } from "../AI/AIResultBlocks";
-
-const categories = [
-  "Graphics & Design",
-  "Mobile App Development",
-  "Frontend Web Development",
-  "Business Development Executive",
-  "Account & Finance",
-  "Artificial Intelligence",
-  "Video Animation",
-  "MEAN Stack Development",
-  "MERN Stack Development",
-  "Data Entry Operator",
-];
+import { JOB_CATEGORIES, JOB_TYPES } from "../../constants/jobOptions";
 
 const initialForm = {
   title: "",
@@ -195,7 +183,7 @@ const PostJob = () => {
               className="field mt-2"
             >
               <option value="">Select Category</option>
-              {categories.map((category) => (
+              {JOB_CATEGORIES.map((category) => (
                 <option key={category} value={category}>
                   {category}
                 </option>
@@ -211,9 +199,11 @@ const PostJob = () => {
               className="field mt-2"
             >
               <option value="">Select Job Type</option>
-              <option value="Full-time">Full-time</option>
-              <option value="Part-time">Part-time</option>
-              <option value="Internship">Internship</option>
+              {JOB_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
             </select>
           </label>
 

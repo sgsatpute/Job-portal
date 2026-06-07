@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import validator from "validator";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { USER_ROLES } from "../constants/applicationConstants.js";
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -28,7 +29,7 @@ const userSchema = new mongoose.Schema({
   role: {
     type: String,
     required: [true, "Please select a role"],
-    enum: ["Job Seeker", "Employer"],
+    enum: Object.values(USER_ROLES),
   },
   resume: {
     public_id: {

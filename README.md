@@ -126,11 +126,13 @@ flowchart LR
 ```text
 .
 |-- backend
+|   |-- constants
 |   |-- controllers
 |   |-- database
 |   |-- middlewares
 |   |-- models
 |   |-- routes
+|   |-- services
 |   |-- utils
 |   |-- app.js
 |   |-- server.js
@@ -139,6 +141,7 @@ flowchart LR
 |   |-- public
 |   |-- src
 |   |   |-- components
+|   |   |-- constants
 |   |   `-- utils
 |   |-- vercel.json
 |   `-- .env.example

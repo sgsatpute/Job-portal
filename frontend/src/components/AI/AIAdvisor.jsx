@@ -4,6 +4,7 @@ import { useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Context } from "../../main";
 import api, { getErrorMessage } from "../../utils/api";
+import { formatSalary } from "../../utils/formatters";
 
 const initialForm = {
   targetRole: "",
@@ -16,17 +17,6 @@ const initialForm = {
   jobDescription: "",
   jobLocation: "",
   salary: "",
-};
-
-const formatSalary = (job) => {
-  if (!job) return "";
-  if (job.fixedSalary) return Number(job.fixedSalary).toLocaleString();
-  if (job.salaryFrom && job.salaryTo) {
-    return `${Number(job.salaryFrom).toLocaleString()} - ${Number(
-      job.salaryTo
-    ).toLocaleString()}`;
-  }
-  return "";
 };
 
 const AdviceList = ({ title, items }) => (

@@ -19,16 +19,8 @@ import {
   RoadmapBlock,
   ScoreBlock,
 } from "../AI/AIResultBlocks";
-
-const formatSalary = (job) => {
-  if (job.fixedSalary) return Number(job.fixedSalary).toLocaleString();
-  if (job.salaryFrom && job.salaryTo) {
-    return `${Number(job.salaryFrom).toLocaleString()} - ${Number(
-      job.salaryTo
-    ).toLocaleString()}`;
-  }
-  return "Not disclosed";
-};
+import { formatSalary } from "../../utils/formatters";
+import { USER_ROLES } from "../../constants/userRoles";
 
 const JobDetails = () => {
   const { id } = useParams();
@@ -125,7 +117,7 @@ const JobDetails = () => {
               >
                 Ask AI
               </Link>
-              {user?.role === "Job Seeker" && (
+              {user?.role === USER_ROLES.JOB_SEEKER && (
                 <>
                   <button
                     type="button"
@@ -156,7 +148,7 @@ const JobDetails = () => {
                 <FaQuestionCircle />
                 {aiLoading === "interview" ? "Loading..." : "Questions"}
               </button>
-              {user?.role !== "Employer" && (
+              {user?.role !== USER_ROLES.EMPLOYER && (
                 <Link to={`/application/${job._id}`} className="primary-btn">
                   Apply Now
                 </Link>

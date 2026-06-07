@@ -2,12 +2,12 @@ import { catchAsyncErrors } from "../middlewares/catchAsyncError.js";
 import { User } from "../models/userSchema.js";
 import ErrorHandler from "../middlewares/error.js";
 import { getCookieOptions, sendToken } from "../utils/jwtToken.js";
-import cloudinary from "cloudinary";
 import validator from "validator";
-import fs from "fs/promises";
-import pdfParse from "pdf-parse/lib/pdf-parse.js";
-
-const MAX_RESUME_TEXT_LENGTH = 12000;
+import {
+  destroyResumeAsset,
+  uploadPdfResume,
+} from "../services/resumeService.js";
+import { USER_ROLES } from "../constants/applicationConstants.js";
 
 const validateAuthFields = ({ name, email, phone, password, role }, isRegister) => {
   if (isRegister && (!name || !email || !phone || !password || !role)) {
@@ -28,23 +28,10 @@ const validateAuthFields = ({ name, email, phone, password, role }, isRegister) 
   if (password && password.length < 8) {
     return "Password must contain at least 8 characters.";
   }
-  if (!["Job Seeker", "Employer"].includes(role)) {
+  if (!Object.values(USER_ROLES).includes(role)) {
     return "Please select a valid role.";
   }
   return null;
-};
-
-const extractResumeText = async (filePath) => {
-  try {
-    const buffer = await fs.readFile(filePath);
-    const parsedPdf = await pdfParse(buffer);
-    return String(parsedPdf.text || "")
-      .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, MAX_RESUME_TEXT_LENGTH);
-  } catch (error) {
-    return "";
-  }
 };
 
 export const register = catchAsyncErrors(async (req, res, next) => {
@@ -185,7 +172,7 @@ export const updateProfile = catchAsyncErrors(async (req, res, next) => {
 });
 
 export const uploadResume = catchAsyncErrors(async (req, res, next) => {
-  if (req.user.role !== "Job Seeker") {
+  if (req.user.role !== USER_ROLES.JOB_SEEKER) {
     return next(new ErrorHandler("Only job seekers can upload a resume.", 403));
   }
 
@@ -193,45 +180,23 @@ export const uploadResume = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("Please upload a PDF resume.", 400));
   }
 
-  const { resume } = req.files;
-  if (resume.mimetype !== "application/pdf") {
-    return next(new ErrorHandler("Only PDF resume files are allowed.", 400));
-  }
-
-  if (resume.size > 5 * 1024 * 1024) {
-    return next(new ErrorHandler("Resume file size must be 5MB or less.", 400));
-  }
-
   if (req.user.resume?.public_id) {
-    await cloudinary.v2.uploader.destroy(req.user.resume.public_id, {
-      resource_type: "raw",
-    });
+    await destroyResumeAsset(req.user.resume.public_id);
   }
 
-  const resumeText = await extractResumeText(resume.tempFilePath);
-
-  const cloudinaryResponse = await cloudinary.v2.uploader.upload(
-    resume.tempFilePath,
-    {
-      folder: "jobportal/resumes",
-      resource_type: "raw",
-      use_filename: true,
-      unique_filename: true,
-    }
+  const uploadedResume = await uploadPdfResume(
+    req.files.resume,
+    "jobportal/resumes"
   );
-
-  if (!cloudinaryResponse?.secure_url) {
-    return next(new ErrorHandler("Failed to upload resume to Cloudinary.", 500));
-  }
 
   const updatedUser = await User.findByIdAndUpdate(
     req.user._id,
     {
       resume: {
-        public_id: cloudinaryResponse.public_id,
-        url: cloudinaryResponse.secure_url,
+        public_id: uploadedResume.public_id,
+        url: uploadedResume.url,
       },
-      resumeText,
+      resumeText: uploadedResume.text,
     },
     { new: true, runValidators: true }
   );

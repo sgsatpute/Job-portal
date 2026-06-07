@@ -11,13 +11,9 @@ import {
   ProviderBadge,
   ScoreBlock,
 } from "../AI/AIResultBlocks";
-
-const statuses = ["Pending", "Shortlisted", "Rejected"];
-
-const formatDate = (date) => {
-  if (!date) return "Not recorded";
-  return new Date(date).toLocaleDateString();
-};
+import { APPLICATION_STATUSES } from "../../constants/jobOptions";
+import { USER_ROLES } from "../../constants/userRoles";
+import { formatDate } from "../../utils/formatters";
 
 const MyApplications = () => {
   const { user, setUser } = useContext(Context);
@@ -37,10 +33,10 @@ const MyApplications = () => {
   const fetchApplications = useCallback(async () => {
     setLoading(true);
     try {
-      if (user?.role === "Employer") {
+      if (user?.role === USER_ROLES.EMPLOYER) {
         const { data } = await api.get("/application/employer/getall");
         setApplications(data.applications || []);
-      } else if (user?.role === "Job Seeker") {
+      } else if (user?.role === USER_ROLES.JOB_SEEKER) {
         const { data } = await api.get("/application/jobseeker/dashboard");
         setApplications(data.applications || []);
         setStats(
@@ -158,7 +154,7 @@ const MyApplications = () => {
     return <LoadingSpinner label="Loading applications..." />;
   }
 
-  if (user?.role === "Job Seeker") {
+  if (user?.role === USER_ROLES.JOB_SEEKER) {
     return (
       <main className="page-wrap">
         <div className="mb-8">
@@ -470,7 +466,7 @@ const EmployerCard = ({ application, updateApplicationStatus }) => {
               }
               className="field mt-2"
             >
-              {statuses.map((status) => (
+              {APPLICATION_STATUSES.map((status) => (
                 <option key={status} value={status}>
                   {status}
                 </option>

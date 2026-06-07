@@ -2,6 +2,7 @@ import { useContext } from "react";
 import { FaBuilding, FaSuitcase, FaUsers, FaUserPlus } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { Context } from "../../main";
+import { USER_ROLES } from "../../constants/userRoles";
 
 const HeroSection = () => {
   const { isAuthorized, user } = useContext(Context);
@@ -55,7 +56,7 @@ const HeroSection = () => {
               <Link to="/register" className="secondary-btn">
                 Create Account
               </Link>
-            ) : user?.role === "Employer" ? (
+            ) : user?.role === USER_ROLES.EMPLOYER ? (
               <Link to="/job/post" className="secondary-btn">
                 Post a Job
               </Link>

@@ -3,13 +3,12 @@ import ErrorHandler from "../middlewares/error.js";
 import { Application } from "../models/applicationSchema.js";
 import { Job } from "../models/jobSchema.js";
 import { User } from "../models/userSchema.js";
-import cloudinary from "cloudinary";
 import validator from "validator";
-import fs from "fs/promises";
-import pdfParse from "pdf-parse/lib/pdf-parse.js";
-
-const APPLICATION_STATUSES = ["Pending", "Shortlisted", "Rejected"];
-const MAX_RESUME_TEXT_LENGTH = 12000;
+import {
+  APPLICATION_STATUSES,
+  USER_ROLES,
+} from "../constants/applicationConstants.js";
+import { uploadPdfResume } from "../services/resumeService.js";
 
 const validateApplicationFields = ({ name, email, coverLetter, phone, address }) => {
   if (!name || !email || !coverLetter || !phone || !address) {
@@ -30,53 +29,9 @@ const validateApplicationFields = ({ name, email, coverLetter, phone, address })
   return null;
 };
 
-const extractResumeText = async (filePath) => {
-  try {
-    const buffer = await fs.readFile(filePath);
-    const parsedPdf = await pdfParse(buffer);
-    return String(parsedPdf.text || "")
-      .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, MAX_RESUME_TEXT_LENGTH);
-  } catch (error) {
-    return "";
-  }
-};
-
-const uploadPdfResume = async (resume) => {
-  if (resume.mimetype !== "application/pdf") {
-    throw new ErrorHandler("Only PDF resume files are allowed.", 400);
-  }
-
-  if (resume.size > 5 * 1024 * 1024) {
-    throw new ErrorHandler("Resume file size must be 5MB or less.", 400);
-  }
-
-  const resumeText = await extractResumeText(resume.tempFilePath);
-  const cloudinaryResponse = await cloudinary.v2.uploader.upload(
-    resume.tempFilePath,
-    {
-      folder: "jobportal/applications",
-      resource_type: "raw",
-      use_filename: true,
-      unique_filename: true,
-    }
-  );
-
-  if (!cloudinaryResponse?.secure_url) {
-    throw new ErrorHandler("Failed to upload resume to Cloudinary.", 500);
-  }
-
-  return {
-    public_id: cloudinaryResponse.public_id,
-    url: cloudinaryResponse.secure_url,
-    text: resumeText,
-  };
-};
-
 export const postApplication = catchAsyncErrors(async (req, res, next) => {
   const { role } = req.user;
-  if (role === "Employer") {
+  if (role === USER_ROLES.EMPLOYER) {
     return next(
       new ErrorHandler("Employers are not allowed to submit applications.", 403)
     );
@@ -109,7 +64,10 @@ export const postApplication = catchAsyncErrors(async (req, res, next) => {
   let resumeTextToSave = fullUser?.resumeText || "";
   let resumeToSave = fullUser?.resume?.url ? fullUser.resume : null;
   if (req.files?.resume) {
-    const uploadedResume = await uploadPdfResume(req.files.resume);
+    const uploadedResume = await uploadPdfResume(
+      req.files.resume,
+      "jobportal/applications"
+    );
     resumeTextToSave = uploadedResume.text;
     resumeToSave = {
       public_id: uploadedResume.public_id,
@@ -130,11 +88,11 @@ export const postApplication = catchAsyncErrors(async (req, res, next) => {
     jobID: jobDetails._id,
     applicantID: {
       user: req.user._id,
-      role: "Job Seeker",
+      role: USER_ROLES.JOB_SEEKER,
     },
     employerID: {
       user: jobDetails.postedBy,
-      role: "Employer",
+      role: USER_ROLES.EMPLOYER,
     },
     resume: resumeToSave,
     resumeText: resumeTextToSave,
@@ -150,7 +108,7 @@ export const postApplication = catchAsyncErrors(async (req, res, next) => {
 export const employerGetAllApplications = catchAsyncErrors(
   async (req, res, next) => {
     const { role } = req.user;
-    if (role === "Job Seeker") {
+    if (role === USER_ROLES.JOB_SEEKER) {
       return next(
         new ErrorHandler("Job seekers are not allowed to access this resource.", 403)
       );
@@ -170,7 +128,7 @@ export const employerGetAllApplications = catchAsyncErrors(
 export const jobseekerGetAllApplications = catchAsyncErrors(
   async (req, res, next) => {
     const { role } = req.user;
-    if (role === "Employer") {
+    if (role === USER_ROLES.EMPLOYER) {
       return next(
         new ErrorHandler("Employers are not allowed to access this resource.", 403)
       );
@@ -190,7 +148,7 @@ export const jobseekerGetAllApplications = catchAsyncErrors(
 export const jobseekerDeleteApplication = catchAsyncErrors(
   async (req, res, next) => {
     const { role } = req.user;
-    if (role === "Employer") {
+    if (role === USER_ROLES.EMPLOYER) {
       return next(
         new ErrorHandler("Employers are not allowed to access this resource.", 403)
       );
@@ -212,7 +170,7 @@ export const jobseekerDeleteApplication = catchAsyncErrors(
 );
 
 export const updateApplicationStatus = catchAsyncErrors(async (req, res, next) => {
-  if (req.user.role !== "Employer") {
+  if (req.user.role !== USER_ROLES.EMPLOYER) {
     return next(new ErrorHandler("Only employers can update application status.", 403));
   }
 
@@ -242,7 +200,7 @@ export const updateApplicationStatus = catchAsyncErrors(async (req, res, next) =
 });
 
 export const jobseekerDashboard = catchAsyncErrors(async (req, res, next) => {
-  if (req.user.role !== "Job Seeker") {
+  if (req.user.role !== USER_ROLES.JOB_SEEKER) {
     return next(new ErrorHandler("Only job seekers can access this dashboard.", 403));
   }
 

@@ -4,6 +4,7 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Context } from "../../main";
 import api, { getErrorMessage } from "../../utils/api";
+import { USER_ROLES } from "../../constants/userRoles";
 
 const Navbar = () => {
   const [show, setShow] = useState(false);
@@ -31,7 +32,7 @@ const Navbar = () => {
     { to: "/external-jobs", label: "External Jobs" },
     {
       to: "/applications/me",
-      label: user?.role === "Employer" ? "Applications" : "Dashboard",
+      label: user?.role === USER_ROLES.EMPLOYER ? "Applications" : "Dashboard",
     },
     { to: "/profile", label: "Profile" },
   ] : [
@@ -39,7 +40,7 @@ const Navbar = () => {
     { to: "/job/getall", label: "Jobs" },
   ];
 
-  if (user?.role === "Employer") {
+  if (user?.role === USER_ROLES.EMPLOYER) {
     navLinks.push(
       { to: "/job/post", label: "Post Job" },
       { to: "/job/me", label: "Employer Dashboard" }

@@ -7,6 +7,7 @@ import { Link, Navigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Context } from "../../main";
 import api, { getErrorMessage } from "../../utils/api";
+import { ROLE_OPTIONS } from "../../constants/userRoles";
 
 const Register = () => {
   const [email, setEmail] = useState("");
@@ -96,8 +97,11 @@ const Register = () => {
                   className="field pr-10"
                 >
                   <option value="">Select Role</option>
-                  <option value="Employer">Employer</option>
-                  <option value="Job Seeker">Job Seeker</option>
+                  {ROLE_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
                 </select>
                 <FaRegUser className="pointer-events-none absolute right-3 top-3 text-slate-400" />
               </div>

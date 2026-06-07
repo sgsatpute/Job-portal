@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { JOB_TYPES } from "../constants/jobConstants.js";
 
 const jobSchema = new mongoose.Schema({
   title: {
@@ -19,7 +20,7 @@ const jobSchema = new mongoose.Schema({
   },
   jobType: {
     type: String,
-    enum: ["Full-time", "Part-time", "Internship"],
+    enum: JOB_TYPES,
     default: "Full-time",
   },
   country: {

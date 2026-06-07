@@ -3,6 +3,7 @@ import ErrorHandler from "../middlewares/error.js";
 import { Application } from "../models/applicationSchema.js";
 import { Job } from "../models/jobSchema.js";
 import { User } from "../models/userSchema.js";
+import { USER_ROLES } from "../constants/applicationConstants.js";
 
 const MAX_FIELD_LENGTH = 1400;
 const MAX_RESUME_CONTEXT_LENGTH = 6000;
@@ -944,7 +945,7 @@ export const generateCareerAdvice = catchAsyncErrors(async (req, res, next) => {
 });
 
 export const analyzeResume = catchAsyncErrors(async (req, res, next) => {
-  if (req.user.role !== "Job Seeker") {
+  if (req.user.role !== USER_ROLES.JOB_SEEKER) {
     return next(new ErrorHandler("Only job seekers can analyze a resume.", 403));
   }
 
@@ -984,7 +985,7 @@ export const analyzeResume = catchAsyncErrors(async (req, res, next) => {
 });
 
 export const generateJobMatch = catchAsyncErrors(async (req, res, next) => {
-  if (req.user.role !== "Job Seeker") {
+  if (req.user.role !== USER_ROLES.JOB_SEEKER) {
     return next(new ErrorHandler("Only job seekers can generate a job match.", 403));
   }
 
@@ -1018,7 +1019,7 @@ export const generateJobMatch = catchAsyncErrors(async (req, res, next) => {
 });
 
 export const generateCoverLetter = catchAsyncErrors(async (req, res, next) => {
-  if (req.user.role !== "Job Seeker") {
+  if (req.user.role !== USER_ROLES.JOB_SEEKER) {
     return next(new ErrorHandler("Only job seekers can generate a cover letter.", 403));
   }
 
@@ -1100,7 +1101,7 @@ export const generateInterviewQuestions = catchAsyncErrors(async (req, res, next
 });
 
 export const generateSkillRoadmap = catchAsyncErrors(async (req, res, next) => {
-  if (req.user.role !== "Job Seeker") {
+  if (req.user.role !== USER_ROLES.JOB_SEEKER) {
     return next(new ErrorHandler("Only job seekers can generate a skill roadmap.", 403));
   }
 
@@ -1147,7 +1148,7 @@ export const generateSkillRoadmap = catchAsyncErrors(async (req, res, next) => {
 });
 
 export const summarizeApplication = catchAsyncErrors(async (req, res, next) => {
-  if (req.user.role !== "Employer") {
+  if (req.user.role !== USER_ROLES.EMPLOYER) {
     return next(new ErrorHandler("Only employers can summarize applications.", 403));
   }
 
@@ -1212,7 +1213,7 @@ export const summarizeApplication = catchAsyncErrors(async (req, res, next) => {
 });
 
 export const generateJobDescription = catchAsyncErrors(async (req, res, next) => {
-  if (req.user.role !== "Employer") {
+  if (req.user.role !== USER_ROLES.EMPLOYER) {
     return next(new ErrorHandler("Only employers can generate job descriptions.", 403));
   }
 

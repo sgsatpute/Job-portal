@@ -5,24 +5,9 @@ import toast from "react-hot-toast";
 import { Context } from "../../main";
 import api, { getErrorMessage } from "../../utils/api";
 import LoadingSpinner from "../Shared/LoadingSpinner";
-
-const salaryRanges = [
-  { value: "all", label: "Any Salary" },
-  { value: "0-30000", label: "Below 30,000" },
-  { value: "30000-60000", label: "30,000 - 60,000" },
-  { value: "60000-100000", label: "60,000 - 100,000" },
-  { value: "100000+", label: "Above 100,000" },
-];
-
-const formatSalary = (job) => {
-  if (job.fixedSalary) return Number(job.fixedSalary).toLocaleString();
-  if (job.salaryFrom && job.salaryTo) {
-    return `${Number(job.salaryFrom).toLocaleString()} - ${Number(
-      job.salaryTo
-    ).toLocaleString()}`;
-  }
-  return "Not disclosed";
-};
+import { SALARY_RANGES } from "../../constants/jobOptions";
+import { USER_ROLES } from "../../constants/userRoles";
+import { formatSalary } from "../../utils/formatters";
 
 const Jobs = () => {
   const [jobs, setJobs] = useState([]);
@@ -86,7 +71,11 @@ const Jobs = () => {
   }, [filters, page, pagination.limit]);
 
   useEffect(() => {
-    if (!isAuthorized || user?.role !== "Job Seeker" || jobs.length === 0) {
+    if (
+      !isAuthorized ||
+      user?.role !== USER_ROLES.JOB_SEEKER ||
+      jobs.length === 0
+    ) {
       setJobMatches({});
       setMatchesLoading(false);
       return;
@@ -193,7 +182,7 @@ const Jobs = () => {
               onChange={(e) => updateFilter("salaryRange", e.target.value)}
               className="field mt-2"
             >
-              {salaryRanges.map((range) => (
+              {SALARY_RANGES.map((range) => (
                 <option key={range.value} value={range.value}>
                   {range.label}
                 </option>
@@ -236,7 +225,7 @@ const Jobs = () => {
                   {formatSalary(job)}
                 </p>
               </div>
-              {isAuthorized && user?.role === "Job Seeker" && (
+              {isAuthorized && user?.role === USER_ROLES.JOB_SEEKER && (
                 <div className="mt-4 rounded-lg bg-slate-50 p-3">
                   <div className="flex items-center justify-between gap-3">
                     <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-brand-700">

@@ -1,5 +1,9 @@
 import mongoose from "mongoose";
 import validator from "validator";
+import {
+  APPLICATION_STATUSES,
+  USER_ROLES,
+} from "../constants/applicationConstants.js";
 
 const applicationSchema = new mongoose.Schema({
   name: {
@@ -42,7 +46,7 @@ const applicationSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["Pending", "Shortlisted", "Rejected"],
+    enum: APPLICATION_STATUSES,
     default: "Pending",
   },
   jobID: {
@@ -61,7 +65,7 @@ const applicationSchema = new mongoose.Schema({
     },
     role: {
       type: String,
-      enum: ["Job Seeker"],
+      enum: [USER_ROLES.JOB_SEEKER],
       required: true,
     },
   },
@@ -73,7 +77,7 @@ const applicationSchema = new mongoose.Schema({
     },
     role: {
       type: String,
-      enum: ["Employer"],
+      enum: [USER_ROLES.EMPLOYER],
       required: true,
     },
   },

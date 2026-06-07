@@ -2,6 +2,8 @@ import { catchAsyncErrors } from "../middlewares/catchAsyncError.js";
 import { Job } from "../models/jobSchema.js";
 import { Application } from "../models/applicationSchema.js";
 import ErrorHandler from "../middlewares/error.js";
+import { JOB_TYPES } from "../constants/jobConstants.js";
+import { USER_ROLES } from "../constants/applicationConstants.js";
 
 const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -111,7 +113,7 @@ export const getAllJobs = catchAsyncErrors(async (req, res, next) => {
 
 export const postJob = catchAsyncErrors(async (req, res, next) => {
   const { role } = req.user;
-  if (role === "Job Seeker") {
+  if (role === USER_ROLES.JOB_SEEKER) {
     return next(
       new ErrorHandler("Job seekers are not allowed to post jobs.", 403)
     );
@@ -133,7 +135,7 @@ export const postJob = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("Please provide full job details.", 400));
   }
 
-  if (!["Full-time", "Part-time", "Internship"].includes(jobType)) {
+  if (!JOB_TYPES.includes(jobType)) {
     return next(new ErrorHandler("Please select a valid job type.", 400));
   }
 
@@ -179,7 +181,7 @@ export const postJob = catchAsyncErrors(async (req, res, next) => {
 
 export const getMyJobs = catchAsyncErrors(async (req, res, next) => {
   const { role } = req.user;
-  if (role === "Job Seeker") {
+  if (role === USER_ROLES.JOB_SEEKER) {
     return next(
       new ErrorHandler("Job seekers are not allowed to access this resource.", 403)
     );
@@ -195,7 +197,7 @@ export const getMyJobs = catchAsyncErrors(async (req, res, next) => {
 
 export const updateJob = catchAsyncErrors(async (req, res, next) => {
   const { role } = req.user;
-  if (role === "Job Seeker") {
+  if (role === USER_ROLES.JOB_SEEKER) {
     return next(
       new ErrorHandler("Job seekers are not allowed to access this resource.", 403)
     );
@@ -208,7 +210,7 @@ export const updateJob = catchAsyncErrors(async (req, res, next) => {
   if (job.postedBy.toString() !== req.user._id.toString()) {
     return next(new ErrorHandler("You can update only your own jobs.", 403));
   }
-  if (req.body.jobType && !["Full-time", "Part-time", "Internship"].includes(req.body.jobType)) {
+  if (req.body.jobType && !JOB_TYPES.includes(req.body.jobType)) {
     return next(new ErrorHandler("Please select a valid job type.", 400));
   }
   if (
@@ -231,7 +233,7 @@ export const updateJob = catchAsyncErrors(async (req, res, next) => {
 
 export const deleteJob = catchAsyncErrors(async (req, res, next) => {
   const { role } = req.user;
-  if (role === "Job Seeker") {
+  if (role === USER_ROLES.JOB_SEEKER) {
     return next(
       new ErrorHandler("Job seekers are not allowed to access this resource.", 403)
     );
@@ -264,7 +266,7 @@ export const getSingleJob = catchAsyncErrors(async (req, res, next) => {
 });
 
 export const getEmployerDashboard = catchAsyncErrors(async (req, res, next) => {
-  if (req.user.role !== "Employer") {
+  if (req.user.role !== USER_ROLES.EMPLOYER) {
     return next(new ErrorHandler("Only employers can access this dashboard.", 403));
   }
 

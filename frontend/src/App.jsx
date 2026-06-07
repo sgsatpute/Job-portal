@@ -20,6 +20,7 @@ import ProtectedRoute from "./components/Shared/ProtectedRoute";
 import Profile from "./components/Profile/Profile";
 import ExternalJobs from "./components/ExternalJobs/ExternalJobs";
 import AIAdvisor from "./components/AI/AIAdvisor";
+import { USER_ROLES } from "./constants/userRoles";
 
 const App = () => {
   const { setAuthLoading, setIsAuthorized, setUser } = useContext(Context);
@@ -80,7 +81,7 @@ const App = () => {
           <Route
             path="/application/:id"
             element={
-              <ProtectedRoute allowedRoles={["Job Seeker"]}>
+              <ProtectedRoute allowedRoles={[USER_ROLES.JOB_SEEKER]}>
                 <Application />
               </ProtectedRoute>
             }
@@ -104,7 +105,7 @@ const App = () => {
           <Route
             path="/job/post"
             element={
-              <ProtectedRoute allowedRoles={["Employer"]}>
+              <ProtectedRoute allowedRoles={[USER_ROLES.EMPLOYER]}>
                 <PostJob />
               </ProtectedRoute>
             }
@@ -112,7 +113,7 @@ const App = () => {
           <Route
             path="/job/me"
             element={
-              <ProtectedRoute allowedRoles={["Employer"]}>
+              <ProtectedRoute allowedRoles={[USER_ROLES.EMPLOYER]}>
                 <MyJobs />
               </ProtectedRoute>
             }

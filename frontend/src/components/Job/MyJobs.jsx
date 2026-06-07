@@ -4,19 +4,7 @@ import { RxCross2 } from "react-icons/rx";
 import toast from "react-hot-toast";
 import api, { getErrorMessage } from "../../utils/api";
 import LoadingSpinner from "../Shared/LoadingSpinner";
-
-const categories = [
-  "Graphics & Design",
-  "Mobile App Development",
-  "Frontend Web Development",
-  "Business Development Executive",
-  "Account & Finance",
-  "Artificial Intelligence",
-  "Video Animation",
-  "MEAN Stack Development",
-  "MERN Stack Development",
-  "Data Entry Operator",
-];
+import { JOB_CATEGORIES, JOB_TYPES } from "../../constants/jobOptions";
 
 const TITLE_MAX_LENGTH = 30;
 const DESCRIPTION_MAX_LENGTH = 500;
@@ -222,7 +210,7 @@ const MyJobs = () => {
                       }
                       className="field mt-2"
                     >
-                      {categories.map((category) => (
+                      {JOB_CATEGORIES.map((category) => (
                         <option key={category} value={category}>
                           {category}
                         </option>
@@ -240,9 +228,11 @@ const MyJobs = () => {
                       }
                       className="field mt-2"
                     >
-                      <option value="Full-time">Full-time</option>
-                      <option value="Part-time">Part-time</option>
-                      <option value="Internship">Internship</option>
+                      {JOB_TYPES.map((type) => (
+                        <option key={type} value={type}>
+                          {type}
+                        </option>
+                      ))}
                     </select>
                   </label>
 

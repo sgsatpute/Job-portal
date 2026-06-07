@@ -2,6 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { Context } from "../../main";
 import api, { getErrorMessage } from "../../utils/api";
+import { USER_ROLES } from "../../constants/userRoles";
 
 const emptyProfile = {
   headline: "",
@@ -121,7 +122,7 @@ const Profile = () => {
                 updateProfileField("headline", event.target.value)
               }
               placeholder={
-                user?.role === "Employer"
+                user?.role === USER_ROLES.EMPLOYER
                   ? "Hiring manager, recruiter, founder"
                   : "Frontend developer, fresher, analyst"
               }
@@ -142,7 +143,7 @@ const Profile = () => {
           </label>
         </div>
 
-        {user?.role === "Employer" && (
+        {user?.role === USER_ROLES.EMPLOYER && (
           <section className="rounded-lg border border-slate-200 bg-slate-50 p-5">
             <h2 className="text-lg font-bold text-slate-950">Company Details</h2>
             <div className="mt-5 grid gap-5 md:grid-cols-2">
@@ -188,7 +189,7 @@ const Profile = () => {
           </section>
         )}
 
-        {user?.role === "Job Seeker" && (
+        {user?.role === USER_ROLES.JOB_SEEKER && (
           <section className="rounded-lg border border-slate-200 bg-slate-50 p-5">
             <h2 className="text-lg font-bold text-slate-950">Career Details</h2>
 
