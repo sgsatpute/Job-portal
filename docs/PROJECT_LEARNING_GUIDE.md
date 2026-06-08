@@ -12,8 +12,8 @@ Use this guide to understand the project from zero, explain it in interviews, an
 
 JobPortal is a MERN stack job portal where:
 
-- Job seekers can register, login, search jobs, upload resumes, apply for jobs, track application status, and use AI placement tools.
-- Employers can register, login, post jobs, view applications, open resumes, update status, and use AI to summarize candidates.
+- Job seekers can register, login, search and save jobs, upload resumes, apply for jobs, track application status, view interview schedules, receive notifications, and use AI placement tools.
+- Employers can register, login, post jobs, view applications, open resumes, update status, schedule or cancel interviews, receive notifications, use analytics, and use AI to summarize candidates.
 
 The app is deployed with:
 
@@ -23,6 +23,8 @@ The app is deployed with:
 - Resume storage: Cloudinary
 - AI: Gemini API free tier
 - External jobs: Adzuna API
+- Real-time notifications: Socket.IO
+- Optional background jobs and email: BullMQ, Redis, Nodemailer
 
 ---
 
@@ -39,6 +41,9 @@ flowchart LR
   Cloudinary["Cloudinary<br/>PDF Resume Files"]
   Gemini["Gemini API<br/>Free AI Tools"]
   Adzuna["Adzuna API<br/>External Jobs"]
+  Socket["Socket.IO<br/>Notifications"]
+  Redis["Redis + BullMQ<br/>Optional Jobs"]
+  SMTP["SMTP<br/>Optional Email"]
 
   User --> Frontend
   Frontend --> Backend
@@ -46,6 +51,9 @@ flowchart LR
   Backend --> Cloudinary
   Backend --> Gemini
   Backend --> Adzuna
+  Backend --> Socket
+  Backend --> Redis
+  Backend --> SMTP
 ```
 
 ### Simple Explanation
@@ -61,6 +69,10 @@ Cloudinary stores PDF files.
 Gemini gives AI responses.
 
 Adzuna gives live external jobs.
+
+Socket.IO sends real-time notifications.
+
+Redis/BullMQ and SMTP are optional production-style services for background email delivery.
 
 ---
 
@@ -1031,11 +1043,11 @@ ADZUNA_APP_KEY
 
 Use this answer:
 
-> My project is a MERN stack job portal. It has two roles: job seeker and employer. Job seekers can search jobs, upload resumes, apply for jobs, track application status, and use AI tools for resume analysis, job match, cover letters, interview questions, and skill roadmaps. Employers can post jobs, view applications, open Cloudinary-hosted resumes, update application status, and generate AI candidate summaries. The frontend is built with React and Tailwind CSS. The backend is built with Express and MongoDB using Mongoose. Authentication uses JWT stored in HTTP-only cookies. Resume PDFs are uploaded to Cloudinary and text is extracted using pdf-parse. AI uses Gemini API free tier with fallback logic. The frontend is deployed on Vercel and backend on Render.
+> My project is a MERN stack job portal. It has two roles: job seeker and employer. Job seekers can search and save jobs, upload resumes, apply for jobs, track application status, view interview schedules, receive notifications, and use AI tools for resume analysis, job match, cover letters, interview questions, and skill roadmaps. Employers can post jobs, view applications, open Cloudinary-hosted resumes, update application status, schedule interviews, view analytics, and generate AI candidate summaries. The frontend is built with React and Tailwind CSS. The backend is built with Express and MongoDB using Mongoose. Authentication uses short-lived JWT access tokens and rotating refresh tokens stored in HTTP-only cookies. Resume PDFs are uploaded to Cloudinary and text is extracted using pdf-parse. AI uses Gemini API free tier with fallback logic. The frontend is deployed on Vercel and backend on Render.
 
 Short version:
 
-> It is a role-based MERN job portal with job posting, applications, resume upload, dashboards, status tracking, Gemini AI placement tools, and deployment on Vercel/Render.
+> It is a role-based MERN job portal with job posting, saved jobs, applications, resume upload, dashboards, status tracking, interview scheduling, real-time notifications, Gemini AI placement tools, and deployment on Vercel/Render.
 
 ---
 
@@ -1048,9 +1060,13 @@ JobPortal - MERN Stack Job Portal Application
 - Developed a role-based job portal using React, Node.js, Express.js, MongoDB, and Tailwind CSS.
 - Implemented JWT authentication with HTTP-only cookies and protected routes for job seekers and employers.
 - Built job search and filtering by keyword, job type, location, and salary range.
+- Built saved jobs/bookmark workflow with a dedicated saved jobs dashboard.
 - Added PDF resume upload using Cloudinary and resume text extraction using pdf-parse.
-- Created job seeker and employer dashboards with application status tracking.
+- Created job seeker and employer dashboards with application status tracking, interview scheduling, and analytics.
+- Added Socket.IO notifications for application, resume, status, and interview events.
 - Integrated Gemini API for resume analysis, job matching, cover letter generation, interview questions, and skill roadmaps.
+- Added secure password reset with hashed reset tokens and refresh-token rotation.
+- Added Jest/Supertest API tests and GitHub Actions CI with MongoDB service and Docker builds.
 - Integrated Adzuna API to fetch live external job listings.
 - Deployed frontend on Vercel and backend on Render with MongoDB Atlas.
 ```
@@ -1058,7 +1074,7 @@ JobPortal - MERN Stack Job Portal Application
 If you want a shorter resume version:
 
 ```text
-Built a MERN stack job portal with role-based authentication, job posting, applications, resume upload, dashboards, Gemini AI placement tools, Adzuna live jobs, and deployment on Vercel/Render.
+Built a MERN stack job portal with role-based authentication, job posting, saved jobs, applications, resume upload, dashboards, interview scheduling, real-time notifications, Gemini AI placement tools, Adzuna live jobs, CI/CD, and deployment on Vercel/Render.
 ```
 
 ---
@@ -1147,7 +1163,7 @@ Answer:
 
 Answer:
 
-> I would add admin moderation, better search ranking, email notifications, interview scheduling, OCR for scanned resumes, and analytics for employers.
+> I would add admin moderation, better search ranking through MongoDB Atlas Search or Elasticsearch, OCR for scanned resumes, employer notes, seeded demo data, and frontend component tests.
 
 ---
 
@@ -1167,7 +1183,10 @@ Do not try to learn everything randomly. Learn in this order:
 10. File upload with FormData
 11. Cloudinary
 12. API integration: Gemini and Adzuna
-13. Deployment: Vercel, Render, MongoDB Atlas
+13. Real-time notifications with Socket.IO
+14. Background jobs and email with BullMQ, Redis, and Nodemailer
+15. Testing with Jest, Supertest, ESLint, and GitHub Actions
+16. Deployment: Vercel, Render, MongoDB Atlas
 
 ---
 
@@ -2863,7 +2882,7 @@ Do not memorize word-for-word only. Understand the meaning.
 
 Candidate answer:
 
-> My project is JobPortal, a MERN stack job portal application. It supports two roles: job seeker and employer. Job seekers can register, login, search and filter jobs, upload PDF resumes, apply to jobs, track application status, and use Gemini AI placement tools. Employers can post jobs, view applications, open resumes, update application status, and use AI candidate summaries. The frontend is built with React, Vite, Tailwind CSS, React Router, Axios, and react-hot-toast. The backend is built with Node.js, Express.js, MongoDB, Mongoose, JWT authentication, Cloudinary file upload, Gemini API, and Adzuna external jobs API.
+> My project is JobPortal, a MERN stack job portal application. It supports two roles: job seeker and employer. Job seekers can register, login, search and filter jobs, save jobs, upload PDF resumes, apply to jobs, track application status, view interview schedules, receive notifications, and use Gemini AI placement tools. Employers can post jobs, view applications, open resumes, update application status, schedule interviews, view analytics, and use AI candidate summaries. The frontend is built with React, Vite, Tailwind CSS, React Router, Axios, Socket.IO Client, Recharts, and react-hot-toast. The backend is built with Node.js, Express.js, MongoDB, Mongoose, JWT authentication, rotating refresh tokens, Cloudinary file upload, Socket.IO, Gemini API, and Adzuna external jobs API.
 
 #### Interviewer: Why did you build this project?
 
@@ -2875,13 +2894,13 @@ Candidate answer:
 
 Candidate answer:
 
-> It is more than basic CRUD because it has role-based access, resume PDF upload to Cloudinary, PDF text extraction, application status tracking, separate dashboards for job seekers and employers, Gemini AI placement tools, Adzuna external jobs API, protected routes, and production deployment on Vercel and Render.
+> It is more than basic CRUD because it has role-based access, rotating refresh-token authentication, saved jobs, resume PDF upload to Cloudinary, PDF text extraction, application status tracking, interview scheduling, real-time notifications, recommendation scoring, analytics dashboards, Gemini AI placement tools, Adzuna external jobs API, protected routes, tests, CI, and production deployment on Vercel and Render.
 
 #### Interviewer: What was your role in this project?
 
 Candidate answer:
 
-> I developed and customized the MERN job portal, added placement-ready features, integrated resume upload, dashboards, application tracking, external jobs, Gemini AI tools, deployment configuration, and improved error handling and documentation. I also debugged issues related to API calls, CORS, PDF extraction, and deployment.
+> I developed and customized the MERN job portal, added placement-ready features, integrated resume upload, saved jobs, dashboards, application tracking, interview scheduling, notifications, external jobs, Gemini AI tools, deployment configuration, tests, and improved error handling and documentation. I also debugged issues related to API calls, CORS, PDF extraction, cookies, and deployment.
 
 ---
 
@@ -2891,7 +2910,7 @@ Candidate answer:
 
 Candidate answer:
 
-> The project has a React frontend and Express backend. The frontend is deployed on Vercel and sends API requests using Axios. The backend is deployed on Render and handles authentication, jobs, applications, resume uploads, AI requests, and external jobs. MongoDB Atlas stores users, jobs, and applications. Cloudinary stores resume PDFs. Gemini API provides AI responses, and Adzuna API provides external job listings.
+> The project has a React frontend and Express backend. The frontend is deployed on Vercel and sends API requests using Axios. The backend is deployed on Render and handles authentication, jobs, saved jobs, applications, interview scheduling, notifications, resume uploads, AI requests, and external jobs. MongoDB Atlas stores users, jobs, saved jobs, applications, refresh tokens, notifications, and recommendation scores. Cloudinary stores resume PDFs. Gemini API provides AI responses, Adzuna API provides external job listings, and Socket.IO powers real-time notifications.
 
 #### Interviewer: Can you draw the architecture?
 
@@ -2905,6 +2924,8 @@ React Frontend on Vercel
 Express Backend on Render
    |
 MongoDB Atlas + Cloudinary + Gemini + Adzuna
+   |
+Socket.IO notifications + optional Redis/SMTP
 ```
 
 #### Interviewer: Why did you separate frontend and backend?
@@ -2975,6 +2996,18 @@ Candidate answer:
 
 > The JWT is stored in an HTTP-only cookie. This is safer than localStorage because browser JavaScript cannot directly read HTTP-only cookies.
 
+#### Interviewer: Why did you add refresh-token rotation?
+
+Candidate answer:
+
+> Access tokens are short-lived, so they reduce risk if stolen. Refresh tokens keep the session alive but are stored as hashes in MongoDB and rotated on refresh. When a refresh token is reused after rotation, the backend can revoke active sessions for that user.
+
+#### Interviewer: How does password reset work?
+
+Candidate answer:
+
+> The user submits an email. The backend creates a random reset token, stores only its SHA-256 hash with a short expiry, and sends the raw token through an email link. When the user submits a new password, the backend hashes the URL token and checks it against MongoDB before updating the password.
+
 #### Interviewer: What is bcrypt used for?
 
 Candidate answer:
@@ -3007,13 +3040,13 @@ Candidate answer:
 
 Candidate answer:
 
-> A job seeker can search jobs, filter jobs, view job details, upload a resume, apply for jobs, track application status, and use AI placement tools like resume analysis, job match, cover letter, interview questions, and skill roadmap.
+> A job seeker can search jobs, filter jobs, save jobs, view job details, upload a resume, apply for jobs, track application status, view interview schedules, receive notifications, and use AI placement tools like resume analysis, job match, cover letter, interview questions, and skill roadmap.
 
 #### Interviewer: What can an employer do?
 
 Candidate answer:
 
-> An employer can post jobs, manage their jobs, view applications, open applicant resumes, update application status, view employer dashboard stats, summarize candidates using AI, and generate job descriptions.
+> An employer can post jobs, manage their jobs, view applications, open applicant resumes, update application status, schedule or cancel interviews, view employer dashboard charts, rank candidates, summarize candidates using AI, and generate job descriptions.
 
 #### Interviewer: How do you prevent job seekers from posting jobs?
 
@@ -3029,13 +3062,13 @@ Candidate answer:
 
 Candidate answer:
 
-> The main collections are Users, Jobs, and Applications.
+> The main collections are Users, Jobs, Applications, SavedJobs, RefreshTokens, Notifications, and RecommendationScores.
 
 #### Interviewer: Explain the User model.
 
 Candidate answer:
 
-> The User model stores name, email, phone, password, role, profile data, resume file information, and extracted resume text. It also has password hashing middleware and methods for password comparison and JWT generation.
+> The User model stores name, email, phone, password, role, profile data, resume file information, extracted resume text, and password reset token metadata. It also has password hashing middleware and methods for password comparison and JWT generation.
 
 #### Interviewer: Explain the Job model.
 
@@ -3047,7 +3080,7 @@ Candidate answer:
 
 Candidate answer:
 
-> The Application model stores applicant details, cover letter, phone, address, resume link, extracted resume text, application status, job ID, applicant ID, employer ID, and applied date.
+> The Application model stores applicant details, cover letter, phone, address, resume link, extracted resume text, application status, interview details, job ID, applicant ID, employer ID, and applied date.
 
 #### Interviewer: How are jobs connected to employers?
 
@@ -3094,6 +3127,22 @@ Candidate answer:
 Candidate answer:
 
 > The current implementation sends filters to the backend and the backend returns matching jobs. This is better for scalability because the frontend does not need to load all jobs first.
+
+---
+
+### Interview Round 7A: Saved Jobs
+
+#### Interviewer: How did you implement saved jobs?
+
+Candidate answer:
+
+> I created a separate `SavedJob` model with `user` and `job` references. It has a unique index on `user + job`, so the same job cannot be saved twice by the same job seeker. The frontend fetches saved job IDs to show bookmark state and has a dedicated Saved Jobs page.
+
+#### Interviewer: Why not store saved jobs directly inside the User model?
+
+Candidate answer:
+
+> A separate collection scales better because saved jobs can grow independently of the user document. It also makes querying, indexing, and deleting saved job records cleaner.
 
 ---
 
@@ -3157,6 +3206,18 @@ Candidate answer:
 
 > Every application has a `status` field. It starts as Pending. Employers can update it to Shortlisted or Rejected. Job seekers can see all their application statuses in the dashboard.
 
+#### Interviewer: How does interview scheduling work?
+
+Candidate answer:
+
+> Interview details are embedded in the Application document. An employer can schedule or cancel an interview only for applications that belong to their posted jobs. Scheduling stores date/time, mode, location or meeting link, notes, and status. The job seeker dashboard shows those details, and the backend creates notifications and optional emails.
+
+#### Interviewer: Why is interview data stored inside Application?
+
+Candidate answer:
+
+> Interview scheduling belongs to a specific application, so embedding it keeps the data simple and avoids another collection for this stage. If the product later supports multiple rounds, I would move interviews into a separate collection.
+
 ---
 
 ### Interview Round 10: Dashboards
@@ -3178,6 +3239,18 @@ Candidate answer:
 Candidate answer:
 
 > The backend fetches applications related to the logged-in user and calculates counts by status. For employer job application counts, it uses MongoDB aggregation to count applications per job.
+
+#### Interviewer: How do real-time notifications work?
+
+Candidate answer:
+
+> The backend uses Socket.IO. After authentication, each user joins a private room based on user ID. When an event happens, such as a new application or interview schedule, the backend saves a notification in MongoDB and emits it to that user's room. The frontend notification center listens for `notification:new`.
+
+#### Interviewer: What events create notifications?
+
+Candidate answer:
+
+> Notifications are created for new applications, resume upload during application, application status updates, interview scheduled, and interview cancelled events.
 
 ---
 
@@ -3224,6 +3297,18 @@ Candidate answer:
 Candidate answer:
 
 > The backend sends only the relevant context such as profile skills, experience, education, resume text, job title, job description, category, and cover letter depending on the AI feature.
+
+#### Interviewer: How does your recommendation engine work?
+
+Candidate answer:
+
+> The recommendation engine extracts skill keywords from candidate profile/resume text and job text. It calculates matching and missing skills, produces a score, stores recommendation scores in MongoDB, and returns recommended jobs for candidates or ranked candidates for employers.
+
+#### Interviewer: Is the recommendation engine the same as Gemini AI?
+
+Candidate answer:
+
+> No. The recommendation engine is deterministic backend logic, so it works without an AI key. Gemini is used for richer natural-language analysis, but recommendations can still work during demos even when the AI provider is unavailable.
 
 ---
 
@@ -3277,6 +3362,28 @@ Candidate answer:
 
 ---
 
+### Interview Round 13A: Testing And CI
+
+#### Interviewer: What tests are included?
+
+Candidate answer:
+
+> The backend has Jest and Supertest API tests for health, auth, jobs, applications, notifications, recommendations, interview scheduling, saved jobs, refresh tokens, and password reset. The frontend has ESLint and production build checks.
+
+#### Interviewer: How do you run all checks?
+
+Candidate answer:
+
+> Locally I run backend syntax checks, backend tests, frontend lint, frontend build, npm audits, and Docker Compose config. In GitHub Actions, MongoDB runs as a service container, so the full backend integration tests run automatically on every push to main.
+
+#### Interviewer: Why do some backend tests skip locally?
+
+Candidate answer:
+
+> Database integration tests require `TEST_DB_URL`. If it is not set, Jest skips those tests to avoid touching production or Atlas data accidentally. GitHub Actions sets `TEST_DB_URL` to a test MongoDB service, so CI runs the full database test suite.
+
+---
+
 ### Interview Round 14: Error Handling And Validation
 
 #### Interviewer: What validation did you add?
@@ -3317,7 +3424,7 @@ Candidate answer:
 
 Candidate answer:
 
-> I tested frontend build, backend syntax, dependency audit, backend health endpoint, resume upload, Gemini AI route, external jobs route, and full user workflows like registration, job posting, applying, status update, and dashboard checks.
+> I verified the app with backend syntax checks, Jest/Supertest API tests, frontend ESLint, Vite production build, npm audits, Docker Compose config, GitHub Actions CI, backend health checks, and deployed frontend route checks. CI also runs database integration tests using a MongoDB service container.
 
 ---
 
@@ -3377,13 +3484,13 @@ Candidate answer:
 
 Candidate answer:
 
-> It does not have an admin panel, email notifications, payment features, interview scheduling, advanced analytics, or OCR for scanned resumes. Also, Render free hosting can have cold-start delay.
+> It does not have an admin moderation panel, OCR for scanned resumes, frontend component tests, advanced Atlas Search or Elasticsearch ranking, seeded demo data, or multi-round interview management. Also, Render free hosting can have cold-start delay.
 
 #### Interviewer: What would you improve next?
 
 Candidate answer:
 
-> I would add admin moderation, email notifications, saved jobs, advanced search ranking, OCR for scanned resumes, interview scheduling, employer analytics, and better notification system.
+> I would add admin moderation, OCR for scanned resumes, advanced search ranking, employer applicant notes, frontend component tests, seeded demo users/jobs, and multi-round interview scheduling.
 
 #### Interviewer: How would you add OCR?
 

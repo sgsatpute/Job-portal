@@ -2,7 +2,7 @@
 
 Developer: **Saurav Satpute**
 
-JobPortal is a full-stack job portal application built with MongoDB, Express.js, React.js, and Node.js. It supports role-based workflows for job seekers and employers, job posting, job search and filtering, resume upload, application status tracking, dashboards, Cloudinary file storage, and production deployment on Vercel and Render.
+JobPortal is a full-stack job portal application built with MongoDB, Express.js, React.js, and Node.js. It supports role-based workflows for job seekers and employers, job posting, job search and filtering, saved jobs, resume upload, application status tracking, interview scheduling, dashboards, AI placement tools, Cloudinary file storage, and production deployment on Vercel and Render.
 
 ## Live Deployment
 
@@ -12,6 +12,25 @@ JobPortal is a full-stack job portal application built with MongoDB, Express.js,
 - Repository branch: `main`
 
 Render free services can sleep after inactivity. The first request after a sleep can take extra time.
+
+## Latest Verification
+
+Last local verification date: **June 9, 2026**.
+
+The project is checked with:
+
+- Backend JavaScript syntax checks using `node --check`.
+- Backend Jest/Supertest API tests.
+- Frontend ESLint.
+- Frontend production build through Vite.
+- Backend and frontend npm security audits.
+- Docker Compose configuration validation.
+- GitHub Actions CI with MongoDB service, dependency audits, tests, and Docker image builds.
+
+## Placement Preparation Docs
+
+- [Project Learning Guide](docs/PROJECT_LEARNING_GUIDE.md) explains the project from basics to interview answers.
+- [Production Audit Roadmap](docs/PRODUCTION_AUDIT_ROADMAP.md) records strengths, risks, completed upgrades, and future improvements.
 
 ## Screenshots
 
@@ -35,9 +54,11 @@ The following pages require a valid login session, so screenshots should be capt
 - Job search and filters page
 - Job seeker applications dashboard
 - Profile and resume upload page
+- Saved jobs page
 - Employer dashboard
 - Employer posted jobs page
 - Employer applications/status management page
+- Employer interview scheduling panel
 - AI Career Assistant page
 - External jobs page
 
@@ -48,8 +69,10 @@ docs/screenshots/home-dashboard.png
 docs/screenshots/jobs-filter.png
 docs/screenshots/jobseeker-dashboard.png
 docs/screenshots/profile-resume.png
+docs/screenshots/saved-jobs.png
 docs/screenshots/employer-dashboard.png
 docs/screenshots/employer-applications.png
+docs/screenshots/interview-scheduling.png
 docs/screenshots/ai-assistant.png
 docs/screenshots/external-jobs.png
 ```
@@ -630,6 +653,22 @@ npm test
 ```
 
 Without `TEST_DB_URL`, Jest still runs non-database tests and skips database integration suites so production or Atlas data is never touched accidentally.
+
+Recommended complete local verification before pushing:
+
+```sh
+cd backend
+npm test
+npm audit --audit-level=high
+
+cd ../frontend
+npm run lint
+npm run build
+npm audit --audit-level=high
+
+cd ..
+docker compose config
+```
 
 ## Troubleshooting
 
