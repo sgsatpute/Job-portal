@@ -1,5 +1,6 @@
 import { catchAsyncErrors } from "../middlewares/catchAsyncError.js";
 import ErrorHandler from "../middlewares/error.js";
+import { env } from "../config/env.js";
 
 const sanitizeQuery = (value, fallback = "") =>
   String(value || fallback)
@@ -21,7 +22,7 @@ const normalizeAdzunaJob = (job) => ({
 });
 
 export const searchExternalJobs = catchAsyncErrors(async (req, res, next) => {
-  const { ADZUNA_APP_ID, ADZUNA_APP_KEY } = process.env;
+  const { ADZUNA_APP_ID, ADZUNA_APP_KEY } = env;
 
   if (!ADZUNA_APP_ID || !ADZUNA_APP_KEY) {
     return next(
@@ -32,7 +33,7 @@ export const searchExternalJobs = catchAsyncErrors(async (req, res, next) => {
     );
   }
 
-  const country = sanitizeQuery(process.env.ADZUNA_COUNTRY, "in").toLowerCase();
+  const country = sanitizeQuery(env.ADZUNA_COUNTRY, "in").toLowerCase();
   const search = sanitizeQuery(req.query.search, "software developer");
   const location = sanitizeQuery(req.query.location, "");
   const page = Math.max(Number(req.query.page) || 1, 1);

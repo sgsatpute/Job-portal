@@ -3,6 +3,7 @@ import validator from "validator";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { USER_ROLES } from "../constants/applicationConstants.js";
+import { env } from "../config/env.js";
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -96,8 +97,8 @@ userSchema.methods.comparePassword = async function (enteredPassword) {
 };
 
 userSchema.methods.getJWTToken = function () {
-  return jwt.sign({ id: this._id }, process.env.JWT_SECRET_KEY, {
-    expiresIn: process.env.JWT_EXPIRE,
+  return jwt.sign({ id: this._id }, env.JWT_SECRET_KEY, {
+    expiresIn: env.JWT_EXPIRE,
   });
 };
 

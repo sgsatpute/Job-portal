@@ -1,22 +1,27 @@
 import express from "express";
-import dbConnection from "./database/dbConnection.js";
 import jobRouter from "./routes/jobRoutes.js";
 import userRouter from "./routes/userRoutes.js";
 import applicationRouter from "./routes/applicationRoutes.js";
 import externalJobRouter from "./routes/externalJobRoutes.js";
 import aiRouter from "./routes/aiRoutes.js";
-import { config } from "dotenv";
 import cors from "cors";
 import { errorMiddleware } from "./middlewares/error.js";
 import cookieParser from "cookie-parser";
 import fileUpload from "express-fileupload";
+import { env } from "./config/env.js";
+import { requestLogger } from "./middlewares/requestLogger.js";
+import {
+  apiRateLimiter,
+  csrfProtection,
+  sanitizeRequest,
+  securityHeaders,
+} from "./middlewares/security.js";
+import { sendSuccess } from "./utils/apiResponse.js";
 
 const app = express();
-config({ path: "./config/config.env" });
-config();
 
-const isProduction = process.env.NODE_ENV === "production";
-const configuredOrigins = (process.env.FRONTEND_URL || "")
+const isProduction = env.NODE_ENV === "production";
+const configuredOrigins = env.FRONTEND_URL
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
@@ -33,6 +38,9 @@ const allowedOrigins = new Set([
   ...(!isProduction ? developmentOrigins : []),
 ]);
 
+app.set("trust proxy", 1);
+app.use(requestLogger);
+app.use(securityHeaders);
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -45,10 +53,10 @@ app.use(
     credentials: true,
   })
 );
+app.use(apiRateLimiter);
 
 app.get("/api/v1/health", (req, res) => {
-  res.status(200).json({
-    success: true,
+  sendSuccess(res, 200, {
     status: "ok",
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
@@ -66,12 +74,13 @@ app.use(
     limits: { fileSize: 5 * 1024 * 1024 },
   })
 );
+app.use(sanitizeRequest);
+app.use(csrfProtection);
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/job", jobRouter);
 app.use("/api/v1/application", applicationRouter);
 app.use("/api/v1/external-jobs", externalJobRouter);
 app.use("/api/v1/ai", aiRouter);
-dbConnection();
 
 app.use(errorMiddleware);
 export default app;

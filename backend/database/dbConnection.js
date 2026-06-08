@@ -1,19 +1,23 @@
 import mongoose from "mongoose";
-import dotenv from "dotenv";
+import { env } from "../config/env.js";
+import logger from "../utils/logger.js";
 
-dotenv.config();
-
-const dbConnection = () => {
-  mongoose
-    .connect(process.env.DB_URL, {
-      dbName: "Job_Portal",
-    })
-    .then(() => {
-      console.log("MongoDB connected successfully.");
-    })
-    .catch((error) => {
-      console.log(`Failed to connect to MongoDB: ${error}`);
+const dbConnection = async () => {
+  try {
+    await mongoose.connect(env.DB_URL, {
+      dbName: env.DB_NAME,
     });
+    logger.info("MongoDB connected successfully.", {
+      dbName: mongoose.connection.name,
+      host: mongoose.connection.host,
+    });
+  } catch (error) {
+    logger.error("Failed to connect to MongoDB.", {
+      message: error.message,
+      stack: error.stack,
+    });
+    process.exit(1);
+  }
 };
 
 export default dbConnection;

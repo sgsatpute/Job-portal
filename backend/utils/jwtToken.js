@@ -1,14 +1,15 @@
+import { env } from "../config/env.js";
+
 export const getCookieOptions = () => {
-  const isProduction = process.env.NODE_ENV === "production";
+  const isProduction = env.NODE_ENV === "production";
   const sameSite =
-    process.env.COOKIE_SAME_SITE || (isProduction ? "none" : "lax");
+    env.COOKIE_SAME_SITE || (isProduction ? "none" : "lax");
   const secure =
-    process.env.COOKIE_SECURE === "true" ||
-    (process.env.COOKIE_SECURE !== "false" && isProduction);
+    env.COOKIE_SECURE || (isProduction && env.COOKIE_SECURE !== false);
 
   return {
     expires: new Date(
-      Date.now() + Number(process.env.COOKIE_EXPIRE || 7) * 24 * 60 * 60 * 1000
+      Date.now() + env.COOKIE_EXPIRE * 24 * 60 * 60 * 1000
     ),
     httpOnly: true,
     sameSite,

@@ -4,6 +4,7 @@ import { Application } from "../models/applicationSchema.js";
 import { Job } from "../models/jobSchema.js";
 import { User } from "../models/userSchema.js";
 import { USER_ROLES } from "../constants/applicationConstants.js";
+import { env } from "../config/env.js";
 
 const MAX_FIELD_LENGTH = 1400;
 const MAX_RESUME_CONTEXT_LENGTH = 6000;
@@ -339,11 +340,11 @@ const callGeminiModelStructured = async ({
 };
 
 const callGeminiStructured = async ({ system, prompt, requiredKeys, maxTokens }) => {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = env.GEMINI_API_KEY;
   if (!apiKey) return null;
 
   const models = getUniqueValues([
-    process.env.GEMINI_MODEL,
+    env.GEMINI_MODEL,
     "gemini-2.5-flash",
     "gemini-2.5-flash-lite",
     "gemini-2.0-flash",
@@ -389,7 +390,7 @@ const generateStructuredResult = async ({
   let warning = "";
   const providerErrors = [];
 
-  const hasGeminiKey = Boolean(process.env.GEMINI_API_KEY);
+  const hasGeminiKey = Boolean(env.GEMINI_API_KEY);
 
   let geminiResult = null;
   if (hasGeminiKey) {

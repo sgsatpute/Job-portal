@@ -1,3 +1,5 @@
+import logger from "../utils/logger.js";
+
 class ErrorHandler extends Error {
   constructor(message, statusCode) {
     super(message);
@@ -38,6 +40,16 @@ export const errorMiddleware = (err, req, res, next) => {
   if (err.name === "TokenExpiredError") {
     const message = `Json Web Token is expired, Try again please!`;
     err = new ErrorHandler(message, 400);
+  }
+
+  if (err.statusCode >= 500) {
+    logger.error("Request failed.", {
+      method: req.method,
+      path: req.originalUrl,
+      statusCode: err.statusCode,
+      message: err.message,
+      stack: err.stack,
+    });
   }
 
   return res.status(err.statusCode).json({
