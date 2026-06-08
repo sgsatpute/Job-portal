@@ -1,6 +1,20 @@
 import { useEffect, useState } from "react";
-import { FaBriefcase, FaCheck, FaEdit, FaTrash } from "react-icons/fa";
+import { FaBriefcase, FaCheck, FaEdit, FaRobot, FaTrash } from "react-icons/fa";
 import { RxCross2 } from "react-icons/rx";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import toast from "react-hot-toast";
 import api, { getErrorMessage } from "../../utils/api";
 import LoadingSpinner from "../Shared/LoadingSpinner";
@@ -29,6 +43,14 @@ const MyJobs = () => {
     totalJobsPosted: 0,
     totalApplicationsReceived: 0,
   });
+  const [analytics, setAnalytics] = useState({
+    applicationsByStatus: [],
+    applicationsPerJob: [],
+    applicationTrends: [],
+    topSkills: [],
+  });
+  const [candidateRecommendations, setCandidateRecommendations] = useState({});
+  const [recommendationLoading, setRecommendationLoading] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editingMode, setEditingMode] = useState(null);
 
@@ -38,6 +60,14 @@ const MyJobs = () => {
       setMyJobs(data.jobs || []);
       setStats(
         data.stats || { totalJobsPosted: 0, totalApplicationsReceived: 0 }
+      );
+      setAnalytics(
+        data.analytics || {
+          applicationsByStatus: [],
+          applicationsPerJob: [],
+          applicationTrends: [],
+          topSkills: [],
+        }
       );
     } catch (error) {
       toast.error(getErrorMessage(error, "Unable to load employer dashboard."));
@@ -88,6 +118,22 @@ const MyJobs = () => {
     );
   };
 
+  const loadCandidateRecommendations = async (jobId) => {
+    setRecommendationLoading(jobId);
+    try {
+      const { data } = await api.get(`/recommendations/candidates/${jobId}`);
+      setCandidateRecommendations((current) => ({
+        ...current,
+        [jobId]: data.recommendations || [],
+      }));
+      toast.success("Candidate ranking generated.");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Unable to rank candidates."));
+    } finally {
+      setRecommendationLoading(null);
+    }
+  };
+
   if (loading) {
     return <LoadingSpinner label="Loading employer dashboard..." />;
   }
@@ -117,6 +163,8 @@ const MyJobs = () => {
           </p>
         </div>
       </div>
+
+      <EmployerAnalytics analytics={analytics} />
 
       {myJobs.length === 0 ? (
         <div className="card-surface p-8 text-center text-slate-600">
@@ -182,8 +230,55 @@ const MyJobs = () => {
                       <FaTrash />
                       Delete
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => loadCandidateRecommendations(job._id)}
+                      className="secondary-btn"
+                      disabled={recommendationLoading === job._id}
+                    >
+                      <FaRobot />
+                      {recommendationLoading === job._id ? "Ranking..." : "Rank Candidates"}
+                    </button>
                   </div>
                 </div>
+
+                {candidateRecommendations[job._id]?.length > 0 && (
+                  <div className="mb-5 rounded-lg border border-brand-100 bg-brand-50/40 p-4">
+                    <h3 className="text-sm font-bold uppercase tracking-wide text-brand-700">
+                      Recommended Candidates
+                    </h3>
+                    <div className="mt-3 grid gap-3 md:grid-cols-2">
+                      {candidateRecommendations[job._id].slice(0, 4).map((item) => (
+                        <div
+                          key={item.application._id}
+                          className="rounded-lg bg-white p-4"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="font-bold text-slate-950">
+                                {item.candidate?.name || item.application.name}
+                              </p>
+                              <p className="mt-1 text-sm text-slate-500">
+                                {item.candidate?.email || item.application.email}
+                              </p>
+                            </div>
+                            <span className="rounded-full bg-brand-100 px-3 py-1 text-sm font-bold text-brand-700">
+                              {item.score}%
+                            </span>
+                          </div>
+                          {item.matchingSkills?.length > 0 && (
+                            <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-brand-700">
+                              {item.matchingSkills.slice(0, 5).join(", ")}
+                            </p>
+                          )}
+                          <p className="mt-2 text-sm text-slate-600">
+                            {item.reasons?.[0]}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid gap-5 md:grid-cols-2">
                   <label>
@@ -374,3 +469,95 @@ const MyJobs = () => {
 };
 
 export default MyJobs;
+
+const chartColors = ["#059669", "#2563eb", "#dc2626", "#f59e0b"];
+
+const EmployerAnalytics = ({ analytics }) => {
+  const hasCharts =
+    analytics.applicationsPerJob.length ||
+    analytics.applicationsByStatus.some((item) => item.count > 0) ||
+    analytics.applicationTrends.length ||
+    analytics.topSkills.length;
+
+  if (!hasCharts) return null;
+
+  return (
+    <section className="mb-8 grid gap-5 xl:grid-cols-2">
+      <div className="card-surface p-6">
+        <h2 className="text-lg font-bold text-slate-950">Applications Per Job</h2>
+        <div className="mt-4 h-72">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={analytics.applicationsPerJob}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="title" tick={{ fontSize: 12 }} />
+              <YAxis allowDecimals={false} />
+              <Tooltip />
+              <Bar dataKey="count" fill="#059669" radius={[6, 6, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div className="card-surface p-6">
+        <h2 className="text-lg font-bold text-slate-950">Hiring Funnel</h2>
+        <div className="mt-4 h-72">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={analytics.applicationsByStatus}
+                dataKey="count"
+                nameKey="status"
+                innerRadius={55}
+                outerRadius={95}
+                paddingAngle={3}
+              >
+                {analytics.applicationsByStatus.map((entry, index) => (
+                  <Cell
+                    key={entry.status}
+                    fill={chartColors[index % chartColors.length]}
+                  />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div className="card-surface p-6">
+        <h2 className="text-lg font-bold text-slate-950">Application Trends</h2>
+        <div className="mt-4 h-72">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={analytics.applicationTrends}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+              <YAxis allowDecimals={false} />
+              <Tooltip />
+              <Line
+                type="monotone"
+                dataKey="count"
+                stroke="#2563eb"
+                strokeWidth={3}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div className="card-surface p-6">
+        <h2 className="text-lg font-bold text-slate-950">Top Skills</h2>
+        <div className="mt-4 h-72">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={analytics.topSkills} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" allowDecimals={false} />
+              <YAxis dataKey="skill" type="category" width={90} />
+              <Tooltip />
+              <Bar dataKey="count" fill="#f59e0b" radius={[0, 6, 6, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </section>
+  );
+};

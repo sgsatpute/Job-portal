@@ -13,6 +13,7 @@ import {
   destroyResumeAsset,
   uploadPdfResume,
 } from "../services/resumeService.js";
+import { enqueueEmail } from "../services/queueService.js";
 import { USER_ROLES } from "../constants/applicationConstants.js";
 
 const validateAuthFields = ({ name, email, phone, password, role }, isRegister) => {
@@ -56,6 +57,11 @@ export const register = catchAsyncErrors(async (req, res, next) => {
     phone,
     password,
     role,
+  });
+  await enqueueEmail({
+    to: user.email,
+    template: "welcome",
+    payload: { name: user.name },
   });
   await sendToken(user, 201, res, "User registered successfully.", req);
 });

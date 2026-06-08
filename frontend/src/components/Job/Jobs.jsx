@@ -13,6 +13,7 @@ const Jobs = () => {
   const [jobs, setJobs] = useState([]);
   const [locations, setLocations] = useState([]);
   const [jobMatches, setJobMatches] = useState({});
+  const [recommendations, setRecommendations] = useState([]);
   const [matchesLoading, setMatchesLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [initialLoad, setInitialLoad] = useState(true);
@@ -110,6 +111,24 @@ const Jobs = () => {
     };
   }, [isAuthorized, jobs, user?.role]);
 
+  useEffect(() => {
+    if (!isAuthorized || user?.role !== USER_ROLES.JOB_SEEKER) {
+      setRecommendations([]);
+      return;
+    }
+
+    const fetchRecommendations = async () => {
+      try {
+        const { data } = await api.get("/recommendations/jobs");
+        setRecommendations(data.recommendations || []);
+      } catch {
+        setRecommendations([]);
+      }
+    };
+
+    fetchRecommendations();
+  }, [isAuthorized, user?.role]);
+
   const updateFilter = (key, value) => {
     setPage(1);
     setFilters((current) => ({ ...current, [key]: value }));
@@ -191,6 +210,52 @@ const Jobs = () => {
           </label>
         </div>
       </section>
+
+      {recommendations.length > 0 && (
+        <section className="mb-8">
+          <div className="mb-4 flex items-center gap-2">
+            <FaRobot className="text-brand-700" />
+            <h2 className="text-xl font-bold text-slate-950">
+              Recommended For You
+            </h2>
+          </div>
+          <div className="grid gap-4 lg:grid-cols-3">
+            {recommendations.slice(0, 3).map((recommendation) => (
+              <article
+                key={recommendation.job._id}
+                className="rounded-lg border border-brand-100 bg-brand-50/40 p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="font-bold text-slate-950">
+                      {recommendation.job.title}
+                    </h3>
+                    <p className="mt-1 text-sm text-slate-600">
+                      {[recommendation.job.city, recommendation.job.country]
+                        .filter(Boolean)
+                        .join(", ")}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-white px-3 py-1 text-sm font-bold text-brand-700">
+                    {recommendation.score}%
+                  </span>
+                </div>
+                {recommendation.matchingSkills?.length > 0 && (
+                  <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-brand-700">
+                    {recommendation.matchingSkills.slice(0, 4).join(", ")}
+                  </p>
+                )}
+                <Link
+                  to={`/job/${recommendation.job._id}`}
+                  className="secondary-btn mt-4 w-full"
+                >
+                  View Match
+                </Link>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-600">
         <FaFilter className="text-brand-600" />

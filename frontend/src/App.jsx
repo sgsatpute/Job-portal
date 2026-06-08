@@ -1,26 +1,28 @@
-import { useContext, useEffect } from "react";
+import { Suspense, lazy, useContext, useEffect } from "react";
 import "./App.css";
 import { Context } from "./main";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import Login from "./components/Auth/Login";
-import Register from "./components/Auth/Register";
 import { Toaster } from "react-hot-toast";
 import Navbar from "./components/Layout/Navbar";
 import Footer from "./components/Layout/Footer";
-import Home from "./components/Home/Home";
-import Jobs from "./components/Job/Jobs";
-import JobDetails from "./components/Job/JobDetails";
-import Application from "./components/Application/Application";
-import MyApplications from "./components/Application/MyApplications";
-import PostJob from "./components/Job/PostJob";
-import NotFound from "./components/NotFound/NotFound";
-import MyJobs from "./components/Job/MyJobs";
 import api from "./utils/api";
 import ProtectedRoute from "./components/Shared/ProtectedRoute";
-import Profile from "./components/Profile/Profile";
-import ExternalJobs from "./components/ExternalJobs/ExternalJobs";
-import AIAdvisor from "./components/AI/AIAdvisor";
+import LoadingSpinner from "./components/Shared/LoadingSpinner";
 import { USER_ROLES } from "./constants/userRoles";
+
+const Login = lazy(() => import("./components/Auth/Login"));
+const Register = lazy(() => import("./components/Auth/Register"));
+const Home = lazy(() => import("./components/Home/Home"));
+const Jobs = lazy(() => import("./components/Job/Jobs"));
+const JobDetails = lazy(() => import("./components/Job/JobDetails"));
+const Application = lazy(() => import("./components/Application/Application"));
+const MyApplications = lazy(() => import("./components/Application/MyApplications"));
+const PostJob = lazy(() => import("./components/Job/PostJob"));
+const NotFound = lazy(() => import("./components/NotFound/NotFound"));
+const MyJobs = lazy(() => import("./components/Job/MyJobs"));
+const Profile = lazy(() => import("./components/Profile/Profile"));
+const ExternalJobs = lazy(() => import("./components/ExternalJobs/ExternalJobs"));
+const AIAdvisor = lazy(() => import("./components/AI/AIAdvisor"));
 
 const App = () => {
   const { setAuthLoading, setIsAuthorized, setUser } = useContext(Context);
@@ -54,83 +56,85 @@ const App = () => {
     <>
       <BrowserRouter>
         <Navbar />
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route
-            path="/"
-            element={<Home />}
-          />
-          <Route
-            path="/job/getall"
-            element={<Jobs />}
-          />
-          <Route
-            path="/ai-assistant"
-            element={
-              <ProtectedRoute>
-                <AIAdvisor />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/external-jobs"
-            element={
-              <ProtectedRoute>
-                <ExternalJobs />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/job/:id"
-            element={
-              <ProtectedRoute>
-                <JobDetails />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/application/:id"
-            element={
-              <ProtectedRoute allowedRoles={[USER_ROLES.JOB_SEEKER]}>
-                <Application />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/applications/me"
-            element={
-              <ProtectedRoute>
-                <MyApplications />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/job/post"
-            element={
-              <ProtectedRoute allowedRoles={[USER_ROLES.EMPLOYER]}>
-                <PostJob />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/job/me"
-            element={
-              <ProtectedRoute allowedRoles={[USER_ROLES.EMPLOYER]}>
-                <MyJobs />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <Suspense fallback={<LoadingSpinner label="Loading page..." />}>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route
+              path="/"
+              element={<Home />}
+            />
+            <Route
+              path="/job/getall"
+              element={<Jobs />}
+            />
+            <Route
+              path="/ai-assistant"
+              element={
+                <ProtectedRoute>
+                  <AIAdvisor />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/external-jobs"
+              element={
+                <ProtectedRoute>
+                  <ExternalJobs />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/job/:id"
+              element={
+                <ProtectedRoute>
+                  <JobDetails />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/application/:id"
+              element={
+                <ProtectedRoute allowedRoles={[USER_ROLES.JOB_SEEKER]}>
+                  <Application />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/applications/me"
+              element={
+                <ProtectedRoute>
+                  <MyApplications />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/job/post"
+              element={
+                <ProtectedRoute allowedRoles={[USER_ROLES.EMPLOYER]}>
+                  <PostJob />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/job/me"
+              element={
+                <ProtectedRoute allowedRoles={[USER_ROLES.EMPLOYER]}>
+                  <MyJobs />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
         <Footer />
         <Toaster position="top-right" />
       </BrowserRouter>

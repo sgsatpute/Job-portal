@@ -130,6 +130,34 @@ describeWithDb("Job and application APIs", () => {
 
     expect(applicationResponse.body.application.status).toBe("Pending");
 
+    const employerNotifications = await employer.agent
+      .get("/api/v1/notifications")
+      .expect(200);
+
+    expect(employerNotifications.body.unreadCount).toBeGreaterThanOrEqual(2);
+    expect(
+      employerNotifications.body.notifications.map(
+        (notification) => notification.type
+      )
+    ).toEqual(
+      expect.arrayContaining(["APPLICATION_SUBMITTED", "RESUME_UPLOADED"])
+    );
+
+    const candidateRecommendations = await employer.agent
+      .get(`/api/v1/recommendations/candidates/${postResponse.body.job._id}`)
+      .expect(200);
+
+    expect(candidateRecommendations.body.recommendations).toHaveLength(1);
+    expect(candidateRecommendations.body.recommendations[0].score).toEqual(
+      expect.any(Number)
+    );
+
+    const jobRecommendations = await seeker.agent
+      .get("/api/v1/recommendations/jobs")
+      .expect(200);
+
+    expect(jobRecommendations.body.recommendations.length).toBeGreaterThan(0);
+
     const employerDashboard = await employer.agent
       .get("/api/v1/job/employer/dashboard")
       .expect(200);
@@ -146,6 +174,14 @@ describeWithDb("Job and application APIs", () => {
       .expect(200);
 
     expect(statusResponse.body.application.status).toBe("Shortlisted");
+
+    const seekerNotifications = await seeker.agent
+      .get("/api/v1/notifications")
+      .expect(200);
+
+    expect(seekerNotifications.body.notifications[0].type).toBe(
+      "APPLICATION_SHORTLISTED"
+    );
 
     const seekerDashboard = await seeker.agent
       .get("/api/v1/application/jobseeker/dashboard")

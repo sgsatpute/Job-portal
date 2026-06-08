@@ -66,4 +66,13 @@ const jobSchema = new mongoose.Schema({
   },
 });
 
+jobSchema.index({
+  title: "text",
+  description: "text",
+  category: "text",
+  city: "text",
+  country: "text",
+  location: "text",
+});
+
 export const Job = mongoose.model("Job", jobSchema);

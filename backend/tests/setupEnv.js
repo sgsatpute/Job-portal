@@ -14,3 +14,4 @@ process.env.COOKIE_SECURE = "false";
 process.env.ENABLE_CSRF = "false";
 process.env.ADZUNA_COUNTRY = "in";
 process.env.GEMINI_MODEL = "gemini-2.5-flash";
+process.env.ENABLE_BACKGROUND_JOBS = "false";

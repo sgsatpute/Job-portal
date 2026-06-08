@@ -84,6 +84,16 @@ JobPortal has two user roles:
 - AI skill gap roadmap and interview question generator from job details.
 - Employer AI candidate summary for received applications.
 - Employer AI job description generator while posting jobs.
+- Real-time notification center powered by Socket.IO.
+- Candidate notifications for shortlisted/rejected application updates.
+- Employer notifications for new applications and resume submissions.
+- Skill-based job recommendations for job seekers.
+- Candidate ranking recommendations for employers.
+- MongoDB text-index search for faster keyword search.
+- Employer analytics charts for applications per job, hiring funnel, trends, and top skills.
+- Job seeker application status chart.
+- Optional Redis/BullMQ background email queue.
+- Optional Nodemailer email templates for welcome, application, status, and password reset flows.
 - External live jobs integration through Adzuna API.
 - Tailwind CSS UI.
 - Responsive navbar with `JobPortal` branding.
@@ -99,12 +109,14 @@ JobPortal has two user roles:
 
 | Layer | Technologies |
 | --- | --- |
-| Frontend | React 18, Vite, React Router, Tailwind CSS, Axios, React Icons, react-hot-toast |
-| Backend | Node.js, Express.js, Mongoose, JWT, bcrypt, validator |
+| Frontend | React 18, Vite, React Router, Tailwind CSS, Axios, React Icons, react-hot-toast, Socket.IO Client, Recharts |
+| Backend | Node.js, Express.js, Mongoose, JWT, bcrypt, validator, Socket.IO |
 | Database | MongoDB Atlas or local MongoDB |
 | File Uploads | express-fileupload, Cloudinary, pdf-parse |
 | AI | Gemini API free tier, smart fallback advisor |
 | External Jobs | Adzuna Jobs API, optional |
+| Background Jobs | BullMQ and Redis, optional |
+| Email | Nodemailer with SMTP, optional |
 | Testing | Jest, Supertest, MongoDB integration tests |
 | Deployment | Vercel for frontend, Render for backend |
 | DevOps | Docker, Docker Compose, GitHub Actions |
@@ -119,6 +131,9 @@ flowchart LR
   API --> Cloudinary["Cloudinary PDF Resume Storage"]
   API --> Gemini["Gemini API<br/>Free tier option"]
   API --> Adzuna["Adzuna Jobs API<br/>Optional"]
+  API --> Redis["Redis + BullMQ<br/>Optional"]
+  API --> SMTP["SMTP Email Provider<br/>Optional"]
+  API --> Socket["Socket.IO Notifications"]
 ```
 
 ## Project Structure
@@ -206,6 +221,14 @@ ADZUNA_APP_KEY=optional-adzuna-app-key
 ADZUNA_COUNTRY=in
 GEMINI_API_KEY=optional-free-gemini-api-key
 GEMINI_MODEL=gemini-2.5-flash
+REDIS_URL=optional-redis-url
+ENABLE_BACKGROUND_JOBS=false
+SMTP_HOST=optional-smtp-host
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=optional-smtp-user
+SMTP_PASS=optional-smtp-password
+SMTP_FROM=JobPortal <no-reply@jobportal.local>
 ```
 
 Start the backend:
@@ -479,6 +502,14 @@ ADZUNA_APP_KEY=optional-adzuna-app-key
 ADZUNA_COUNTRY=in
 GEMINI_API_KEY=optional-free-gemini-api-key
 GEMINI_MODEL=gemini-2.5-flash
+REDIS_URL=optional-redis-url
+ENABLE_BACKGROUND_JOBS=false
+SMTP_HOST=optional-smtp-host
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=optional-smtp-user
+SMTP_PASS=optional-smtp-password
+SMTP_FROM=JobPortal <no-reply@jobportal.local>
 ```
 
 Important:

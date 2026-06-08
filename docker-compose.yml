@@ -41,6 +41,8 @@ services:
       COOKIE_SAME_SITE: lax
       COOKIE_SECURE: "false"
       ENABLE_CSRF: "false"
+      REDIS_URL: redis://redis:6379
+      ENABLE_BACKGROUND_JOBS: "false"
       ADZUNA_COUNTRY: in
       GEMINI_MODEL: gemini-2.5-flash
     healthcheck:

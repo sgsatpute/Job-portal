@@ -43,3 +43,19 @@ services:
         sync: false
       - key: GEMINI_MODEL
         value: gemini-2.5-flash
+      - key: REDIS_URL
+        sync: false
+      - key: ENABLE_BACKGROUND_JOBS
+        value: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_SECURE
+        value: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        value: JobPortal <no-reply@jobportal.local>

@@ -83,4 +83,6 @@ const applicationSchema = new mongoose.Schema({
   },
 });
 
+applicationSchema.index({ resumeText: "text", coverLetter: "text" });
+
 export const Application = mongoose.model("Application", applicationSchema);

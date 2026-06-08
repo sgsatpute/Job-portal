@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { Context } from "../../main";
 import api, { getErrorMessage } from "../../utils/api";
 import { USER_ROLES } from "../../constants/userRoles";
+import NotificationCenter from "../Notifications/NotificationCenter";
 
 const Navbar = () => {
   const [show, setShow] = useState(false);
@@ -93,9 +94,12 @@ const Navbar = () => {
               </NavLink>
             ))}
             {isAuthorized ? (
-              <button type="button" onClick={handleLogout} className="secondary-btn">
-                Logout
-              </button>
+              <div className="flex items-center gap-3">
+                <NotificationCenter isAuthorized={isAuthorized} />
+                <button type="button" onClick={handleLogout} className="secondary-btn">
+                  Logout
+                </button>
+              </div>
             ) : (
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
                 <Link

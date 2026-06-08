@@ -9,6 +9,8 @@ import {
   USER_ROLES,
 } from "../constants/applicationConstants.js";
 import { uploadPdfResume } from "../services/resumeService.js";
+import { createNotification } from "../services/notificationService.js";
+import { enqueueEmail } from "../services/queueService.js";
 
 const validateApplicationFields = ({ name, email, coverLetter, phone, address }) => {
   if (!name || !email || !coverLetter || !phone || !address) {
@@ -97,6 +99,37 @@ export const postApplication = catchAsyncErrors(async (req, res, next) => {
     resume: resumeToSave,
     resumeText: resumeTextToSave,
   });
+
+  await Promise.allSettled([
+    createNotification({
+      recipient: jobDetails.postedBy,
+      type: "APPLICATION_SUBMITTED",
+      title: "New application received",
+      message: `${application.name} applied for ${jobDetails.title}.`,
+      data: {
+        applicationId: application._id,
+        jobId: jobDetails._id,
+      },
+    }),
+    createNotification({
+      recipient: jobDetails.postedBy,
+      type: "RESUME_UPLOADED",
+      title: "Resume ready for review",
+      message: `${application.name}'s resume is attached to the application.`,
+      data: {
+        applicationId: application._id,
+        jobId: jobDetails._id,
+      },
+    }),
+    enqueueEmail({
+      to: application.email,
+      template: "applicationSubmitted",
+      payload: {
+        name: application.name,
+        jobTitle: jobDetails.title,
+      },
+    }),
+  ]);
 
   res.status(201).json({
     success: true,
@@ -191,6 +224,36 @@ export const updateApplicationStatus = catchAsyncErrors(async (req, res, next) =
 
   application.status = status;
   await application.save();
+  const job = await Job.findById(application.jobID).select("title");
+  const notificationType =
+    status === "Shortlisted"
+      ? "APPLICATION_SHORTLISTED"
+      : status === "Rejected"
+        ? "APPLICATION_REJECTED"
+        : "SYSTEM";
+
+  await Promise.allSettled([
+    createNotification({
+      recipient: application.applicantID.user,
+      type: notificationType,
+      title: `Application ${status}`,
+      message: `Your application for ${job?.title || "a job"} is now ${status}.`,
+      data: {
+        applicationId: application._id,
+        jobId: application.jobID,
+        status,
+      },
+    }),
+    enqueueEmail({
+      to: application.email,
+      template: "applicationStatus",
+      payload: {
+        name: application.name,
+        jobTitle: job?.title || "your selected role",
+        status,
+      },
+    }),
+  ]);
 
   res.status(200).json({
     success: true,

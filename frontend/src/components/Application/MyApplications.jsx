@@ -1,5 +1,12 @@
 import { useCallback, useContext, useEffect, useState } from "react";
 import { FaExternalLinkAlt, FaFilePdf, FaRobot, FaTrash } from "react-icons/fa";
+import {
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+} from "recharts";
 import toast from "react-hot-toast";
 import { Context } from "../../main";
 import api, { getErrorMessage } from "../../utils/api";
@@ -226,6 +233,8 @@ const MyApplications = () => {
           <StatCard label="Rejected" value={stats.rejected} />
         </div>
 
+        <ApplicationStatusChart stats={stats} />
+
         {applications.length === 0 ? (
           <div className="card-surface p-8 text-center text-slate-600">
             No applications submitted yet.
@@ -281,6 +290,70 @@ const StatCard = ({ label, value }) => (
     <p className="mt-3 text-3xl font-bold text-slate-950">{value}</p>
   </div>
 );
+
+const statusChartColors = ["#f59e0b", "#059669", "#dc2626"];
+
+const ApplicationStatusChart = ({ stats }) => {
+  const data = [
+    { status: "Pending", count: stats.pending },
+    { status: "Shortlisted", count: stats.shortlisted },
+    { status: "Rejected", count: stats.rejected },
+  ];
+
+  if (!stats.totalApplications) return null;
+
+  return (
+    <section className="card-surface mb-8 p-6">
+      <h2 className="text-lg font-bold text-slate-950">Application Status Mix</h2>
+      <div className="mt-4 grid gap-5 lg:grid-cols-[280px_1fr]">
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data}
+                dataKey="count"
+                nameKey="status"
+                innerRadius={52}
+                outerRadius={90}
+                paddingAngle={3}
+              >
+                {data.map((entry, index) => (
+                  <Cell
+                    key={entry.status}
+                    fill={statusChartColors[index % statusChartColors.length]}
+                  />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="grid content-center gap-3">
+          {data.map((item, index) => (
+            <div
+              key={item.status}
+              className="flex items-center justify-between rounded-lg bg-slate-50 p-4"
+            >
+              <div className="flex items-center gap-3">
+                <span
+                  className="h-3 w-3 rounded-full"
+                  style={{
+                    backgroundColor:
+                      statusChartColors[index % statusChartColors.length],
+                  }}
+                />
+                <span className="font-semibold text-slate-700">{item.status}</span>
+              </div>
+              <span className="text-lg font-bold text-slate-950">
+                {item.count}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
 
 const ResumeAnalysisPanel = ({ result }) => {
   const analysis = result.analysis;

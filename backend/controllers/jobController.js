@@ -3,7 +3,10 @@ import { Job } from "../models/jobSchema.js";
 import { Application } from "../models/applicationSchema.js";
 import ErrorHandler from "../middlewares/error.js";
 import { JOB_TYPES } from "../constants/jobConstants.js";
-import { USER_ROLES } from "../constants/applicationConstants.js";
+import {
+  APPLICATION_STATUSES,
+  USER_ROLES,
+} from "../constants/applicationConstants.js";
 
 const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -43,6 +46,35 @@ const buildSalaryFilter = (salaryRange) => {
   }
 };
 
+const buildRegexSearchQuery = (baseQuery, trimmedSearch) => {
+  if (!trimmedSearch) return baseQuery;
+  const searchRegex = new RegExp(escapeRegex(trimmedSearch), "i");
+  return {
+    ...baseQuery,
+    $and: [
+      ...(baseQuery.$and || []),
+      {
+        $or: [
+          { title: searchRegex },
+          { category: searchRegex },
+          { description: searchRegex },
+          { city: searchRegex },
+          { country: searchRegex },
+          { location: searchRegex },
+        ],
+      },
+    ],
+  };
+};
+
+const appendAndFilter = (query, filter) => {
+  if (Object.keys(filter).length === 0) return query;
+  return {
+    ...query,
+    $and: [...(query.$and || []), filter],
+  };
+};
+
 export const getAllJobs = catchAsyncErrors(async (req, res, next) => {
   const {
     search = "",
@@ -54,38 +86,51 @@ export const getAllJobs = catchAsyncErrors(async (req, res, next) => {
   const limit = Math.min(Math.max(Number(req.query.limit) || 9, 1), 30);
   const skip = (page - 1) * limit;
 
-  const query = { expired: false };
+  const baseQuery = { expired: false };
   const trimmedSearch = String(search).trim();
 
-  if (trimmedSearch) {
-    const searchRegex = new RegExp(escapeRegex(trimmedSearch), "i");
-    query.$or = [
-      { title: searchRegex },
-      { category: searchRegex },
-      { description: searchRegex },
-      { city: searchRegex },
-      { country: searchRegex },
-      { location: searchRegex },
-    ];
-  }
-
   if (jobType !== "all") {
-    query.jobType = jobType;
+    baseQuery.jobType = jobType;
   }
 
   if (location !== "all") {
     const [city, country] = String(location)
       .split(",")
       .map((value) => value.trim());
-    if (city) query.city = new RegExp(`^${escapeRegex(city)}$`, "i");
-    if (country) query.country = new RegExp(`^${escapeRegex(country)}$`, "i");
+    if (city) baseQuery.city = new RegExp(`^${escapeRegex(city)}$`, "i");
+    if (country) baseQuery.country = new RegExp(`^${escapeRegex(country)}$`, "i");
   }
 
-  Object.assign(query, buildSalaryFilter(salaryRange));
+  const queryWithSalary = appendAndFilter(
+    baseQuery,
+    buildSalaryFilter(salaryRange)
+  );
 
-  const [jobs, totalJobs, activeJobsForFilters] = await Promise.all([
-    Job.find(query).sort({ jobPostedOn: -1 }).skip(skip).limit(limit),
-    Job.countDocuments(query),
+  const textQuery = trimmedSearch
+    ? { ...queryWithSalary, $text: { $search: trimmedSearch } }
+    : queryWithSalary;
+  const regexQuery = buildRegexSearchQuery(queryWithSalary, trimmedSearch);
+  const projection = trimmedSearch ? { score: { $meta: "textScore" } } : {};
+  const sort = trimmedSearch
+    ? { score: { $meta: "textScore" }, jobPostedOn: -1 }
+    : { jobPostedOn: -1 };
+
+  let jobs;
+  let totalJobs;
+
+  try {
+    [jobs, totalJobs] = await Promise.all([
+      Job.find(textQuery, projection).sort(sort).skip(skip).limit(limit),
+      Job.countDocuments(textQuery),
+    ]);
+  } catch (error) {
+    [jobs, totalJobs] = await Promise.all([
+      Job.find(regexQuery).sort({ jobPostedOn: -1 }).skip(skip).limit(limit),
+      Job.countDocuments(regexQuery),
+    ]);
+  }
+
+  const [activeJobsForFilters] = await Promise.all([
     Job.find({ expired: false }).select("city country"),
   ]);
   const locations = [
@@ -274,23 +319,95 @@ export const getEmployerDashboard = catchAsyncErrors(async (req, res, next) => {
     jobPostedOn: -1,
   });
   const jobIds = jobs.map((job) => job._id);
-  const applicationCounts = await Application.aggregate([
-    { $match: { jobID: { $in: jobIds } } },
-    { $group: { _id: "$jobID", count: { $sum: 1 } } },
+  const [
+    applicationCounts,
+    statusCounts,
+    applicationTrends,
+    totalApplicationsReceived,
+    applicationsForSkills,
+  ] = await Promise.all([
+    Application.aggregate([
+      { $match: { jobID: { $in: jobIds } } },
+      { $group: { _id: "$jobID", count: { $sum: 1 } } },
+    ]),
+    Application.aggregate([
+      { $match: { "employerID.user": req.user._id } },
+      { $group: { _id: "$status", count: { $sum: 1 } } },
+    ]),
+    Application.aggregate([
+      { $match: { "employerID.user": req.user._id } },
+      {
+        $group: {
+          _id: {
+            $dateToString: { format: "%Y-%m-%d", date: "$appliedAt" },
+          },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+      { $limit: 14 },
+    ]),
+    Application.countDocuments({
+      "employerID.user": req.user._id,
+    }),
+    Application.find({ "employerID.user": req.user._id })
+      .select("+resumeText coverLetter")
+      .limit(100),
   ]);
-  const totalApplicationsReceived = await Application.countDocuments({
-    "employerID.user": req.user._id,
-  });
   const countByJobId = applicationCounts.reduce((acc, item) => {
     acc[item._id.toString()] = item.count;
     return acc;
   }, {});
+  const statusByName = statusCounts.reduce((acc, item) => {
+    acc[item._id] = item.count;
+    return acc;
+  }, {});
+  const trackedSkills = [
+    "react",
+    "node",
+    "mongodb",
+    "javascript",
+    "typescript",
+    "python",
+    "java",
+    "docker",
+    "aws",
+    "testing",
+  ];
+  const topSkills = trackedSkills
+    .map((skill) => ({
+      skill,
+      count: applicationsForSkills.filter((application) =>
+        `${application.resumeText || ""} ${application.coverLetter || ""}`
+          .toLowerCase()
+          .includes(skill)
+      ).length,
+    }))
+    .filter((item) => item.count > 0)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8);
 
   res.status(200).json({
     success: true,
     stats: {
       totalJobsPosted: jobs.length,
       totalApplicationsReceived,
+    },
+    analytics: {
+      applicationsByStatus: APPLICATION_STATUSES.map((status) => ({
+        status,
+        count: statusByName[status] || 0,
+      })),
+      applicationsPerJob: jobs.map((job) => ({
+        jobId: job._id,
+        title: job.title,
+        count: countByJobId[job._id.toString()] || 0,
+      })),
+      applicationTrends: applicationTrends.map((item) => ({
+        date: item._id,
+        count: item.count,
+      })),
+      topSkills,
     },
     jobs: jobs.map((job) => ({
       ...job.toObject(),

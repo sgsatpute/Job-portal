@@ -40,6 +40,14 @@ const envSchema = z.object({
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_MODEL: z.string().default("gemini-2.5-flash"),
   ENABLE_CSRF: booleanFromString(false),
+  REDIS_URL: z.string().optional(),
+  ENABLE_BACKGROUND_JOBS: booleanFromString(false),
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  SMTP_SECURE: booleanFromString(false),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().default("JobPortal <no-reply@jobportal.local>"),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);
