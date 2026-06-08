@@ -40,8 +40,18 @@ jobs:
         run: npm audit --omit=dev --audit-level=high
 
   backend:
-    name: Backend syntax check
+    name: Backend checks
     runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     defaults:
       run:
         working-directory: backend
@@ -63,7 +73,12 @@ jobs:
         run: |
           node --check app.js
           node --check server.js
-          find controllers routes middlewares models database utils -name "*.js" -print -exec node --check {} \;
+          find config constants controllers database middlewares models routes services tests utils validations -name "*.js" -print -exec node --check {} \;
+
+      - name: Run API tests
+        env:
+          TEST_DB_URL: mongodb://127.0.0.1:27017/jobportal-test
+        run: npm test
 
       - name: Audit dependencies
         run: npm audit --audit-level=high

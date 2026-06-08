@@ -105,6 +105,7 @@ JobPortal has two user roles:
 | File Uploads | express-fileupload, Cloudinary, pdf-parse |
 | AI | Gemini API free tier, smart fallback advisor |
 | External Jobs | Adzuna Jobs API, optional |
+| Testing | Jest, Supertest, MongoDB integration tests |
 | Deployment | Vercel for frontend, Render for backend |
 | DevOps | Docker, Docker Compose, GitHub Actions |
 
@@ -551,6 +552,7 @@ Backend:
 ```sh
 cd backend
 npm install
+npm test
 npm audit --audit-level=high
 npm start
 ```
@@ -561,7 +563,17 @@ CI is configured through GitHub Actions in:
 .github/workflows/ci.yml
 ```
 
-The CI pipeline runs frontend lint/build, dependency audits, backend syntax checks, and Docker image builds.
+The CI pipeline runs frontend lint/build, dependency audits, backend syntax checks, backend API tests, and Docker image builds.
+
+Backend API tests require a test MongoDB URL. GitHub Actions starts a MongoDB service container automatically. For a local full test run, start MongoDB and run:
+
+```sh
+cd backend
+$env:TEST_DB_URL="mongodb://127.0.0.1:27017/jobportal-test"
+npm test
+```
+
+Without `TEST_DB_URL`, Jest still runs non-database tests and skips database integration suites so production or Atlas data is never touched accidentally.
 
 ## Troubleshooting
 
