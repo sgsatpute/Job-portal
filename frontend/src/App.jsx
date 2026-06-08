@@ -25,6 +25,13 @@ import { USER_ROLES } from "./constants/userRoles";
 const App = () => {
   const { setAuthLoading, setIsAuthorized, setUser } = useContext(Context);
   useEffect(() => {
+    const handleExpiredSession = () => {
+      setUser({});
+      setIsAuthorized(false);
+    };
+
+    window.addEventListener("auth:expired", handleExpiredSession);
+
     const fetchUser = async () => {
       try {
         const response = await api.get("/user/getuser");
@@ -37,6 +44,10 @@ const App = () => {
       }
     };
     fetchUser();
+
+    return () => {
+      window.removeEventListener("auth:expired", handleExpiredSession);
+    };
   }, [setAuthLoading, setIsAuthorized, setUser]);
 
   return (

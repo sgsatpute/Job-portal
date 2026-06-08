@@ -6,6 +6,7 @@ import {
 } from "../helpers/testDb.js";
 
 let app;
+let RefreshToken;
 const describeWithDb = process.env.TEST_DB_URL ? describe : describe.skip;
 
 const employerPayload = {
@@ -20,6 +21,7 @@ describeWithDb("User API", () => {
   beforeAll(async () => {
     await connectTestDb();
     app = (await import("../../app.js")).default;
+    RefreshToken = (await import("../../models/refreshTokenSchema.js")).RefreshToken;
   });
 
   afterEach(async () => {
@@ -57,7 +59,10 @@ describeWithDb("User API", () => {
       email: employerPayload.email,
       role: employerPayload.role,
     });
-    expect(registerResponse.headers["set-cookie"].join(";")).toContain("token=");
+    const cookies = registerResponse.headers["set-cookie"].join(";");
+    expect(cookies).toContain("accessToken=");
+    expect(cookies).toContain("token=");
+    expect(cookies).toContain("refreshToken=");
 
     const userResponse = await agent.get("/api/v1/user/getuser").expect(200);
 
@@ -66,6 +71,34 @@ describeWithDb("User API", () => {
       role: employerPayload.role,
     });
     expect(userResponse.body.user.password).toBeUndefined();
+  });
+
+  it("rotates refresh tokens and revokes the active session on logout", async () => {
+    const agent = request.agent(app);
+
+    await agent.post("/api/v1/user/register").send(employerPayload).expect(201);
+    expect(await RefreshToken.countDocuments()).toBe(1);
+
+    const refreshResponse = await agent.post("/api/v1/user/refresh").expect(200);
+    expect(refreshResponse.body).toMatchObject({
+      success: true,
+      message: "Session refreshed successfully.",
+    });
+    expect(refreshResponse.headers["set-cookie"].join(";")).toContain(
+      "refreshToken="
+    );
+
+    const sessions = await RefreshToken.find().select("+tokenHash");
+    expect(sessions).toHaveLength(2);
+    expect(sessions.filter((session) => session.revokedAt)).toHaveLength(1);
+
+    await agent.get("/api/v1/user/getuser").expect(200);
+    await agent.get("/api/v1/user/logout").expect(200);
+
+    const activeSessions = await RefreshToken.countDocuments({ revokedAt: null });
+    expect(activeSessions).toBe(0);
+
+    await agent.post("/api/v1/user/refresh").expect(401);
   });
 
   it("rejects duplicate email and wrong password login", async () => {

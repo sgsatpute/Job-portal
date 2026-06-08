@@ -98,7 +98,7 @@ userSchema.methods.comparePassword = async function (enteredPassword) {
 
 userSchema.methods.getJWTToken = function () {
   return jwt.sign({ id: this._id }, env.JWT_SECRET_KEY, {
-    expiresIn: env.JWT_EXPIRE,
+    expiresIn: env.ACCESS_TOKEN_EXPIRE,
   });
 };
 

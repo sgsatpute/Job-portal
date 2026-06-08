@@ -34,7 +34,9 @@ services:
       DB_URL: mongodb://mongodb:27017/jobportal
       DB_NAME: Job_Portal
       JWT_SECRET_KEY: local-docker-development-secret
-      JWT_EXPIRE: 7d
+      ACCESS_TOKEN_EXPIRE: 15m
+      ACCESS_TOKEN_COOKIE_EXPIRE_MINUTES: 15
+      REFRESH_TOKEN_EXPIRE_DAYS: 30
       COOKIE_EXPIRE: 7
       COOKIE_SAME_SITE: lax
       COOKIE_SECURE: "false"

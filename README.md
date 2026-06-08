@@ -64,7 +64,7 @@ JobPortal has two user roles:
 ## Core Features
 
 - Role-based authentication for `Job Seeker` and `Employer`.
-- JWT authentication stored in secure HTTP cookies.
+- Short-lived JWT access tokens and rotating refresh tokens stored in secure HTTP-only cookies.
 - Protected frontend routes that redirect unauthenticated users to login.
 - Job posting and management for employers.
 - Job browsing with keyword search by title, category, description, city, country, or location.
@@ -191,7 +191,9 @@ FRONTEND_URL=http://localhost:5173
 DB_URL=mongodb://127.0.0.1:27017/jobportal
 DB_NAME=Job_Portal
 JWT_SECRET_KEY=replace-with-a-long-random-secret
-JWT_EXPIRE=7d
+ACCESS_TOKEN_EXPIRE=15m
+ACCESS_TOKEN_COOKIE_EXPIRE_MINUTES=15
+REFRESH_TOKEN_EXPIRE_DAYS=30
 COOKIE_EXPIRE=7
 COOKIE_SAME_SITE=lax
 COOKIE_SECURE=false
@@ -462,7 +464,9 @@ FRONTEND_URL=https://job-portal-blue-six.vercel.app
 DB_URL=your-mongodb-atlas-url
 DB_NAME=Job_Portal
 JWT_SECRET_KEY=your-production-jwt-secret
-JWT_EXPIRE=7d
+ACCESS_TOKEN_EXPIRE=15m
+ACCESS_TOKEN_COOKIE_EXPIRE_MINUTES=15
+REFRESH_TOKEN_EXPIRE_DAYS=30
 COOKIE_EXPIRE=7
 COOKIE_SAME_SITE=none
 COOKIE_SECURE=true
@@ -511,6 +515,8 @@ After Vercel deploys, update Render `FRONTEND_URL` to the final Vercel productio
 - Never commit real `.env` files.
 - Rotate MongoDB, Cloudinary, JWT, Adzuna, and Gemini credentials if they were ever exposed in Git history.
 - Use long random values for `JWT_SECRET_KEY`.
+- Access tokens are short-lived. Refresh tokens are stored as SHA-256 hashes in MongoDB and rotated through `/api/v1/user/refresh`.
+- Logout revokes the active refresh token and clears auth cookies.
 - Keep production cookies secure with `COOKIE_SECURE=true`.
 - Keep `COOKIE_SAME_SITE=none` only when frontend and backend are hosted on different domains.
 - Review MongoDB Atlas Network Access before using this for anything beyond a demo.

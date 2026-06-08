@@ -1,9 +1,61 @@
 import axios from "axios";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:4000/api/v1";
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:4000/api/v1",
+  baseURL: API_BASE_URL,
   withCredentials: true,
 });
+
+const refreshClient = axios.create({
+  baseURL: API_BASE_URL,
+  withCredentials: true,
+});
+
+let refreshPromise = null;
+
+const shouldSkipRefresh = (url = "") =>
+  ["/user/login", "/user/register", "/user/logout", "/user/refresh"].some(
+    (path) => url.includes(path)
+  );
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (
+      error.response?.status !== 401 ||
+      !originalRequest ||
+      originalRequest._retry ||
+      shouldSkipRefresh(originalRequest.url)
+    ) {
+      return Promise.reject(error);
+    }
+
+    originalRequest._retry = true;
+
+    try {
+      refreshPromise ||= refreshClient.post("/user/refresh");
+      await refreshPromise;
+      refreshPromise = null;
+      return api(originalRequest);
+    } catch (refreshError) {
+      refreshPromise = null;
+      window.dispatchEvent(new Event("auth:expired"));
+      return Promise.reject({
+        ...refreshError,
+        response: {
+          ...refreshError.response,
+          data: {
+            ...refreshError.response?.data,
+            message: "Session expired. Please log in again.",
+          },
+        },
+      });
+    }
+  }
+);
 
 export const getErrorMessage = (
   error,

@@ -3,6 +3,7 @@ import {
   login,
   register,
   logout,
+  refreshAccessToken,
   getUser,
   updateProfile,
   uploadResume,
@@ -20,6 +21,7 @@ const router = express.Router();
 
 router.post("/register", authRateLimiter, validateRequest(registerSchema), register);
 router.post("/login", authRateLimiter, validateRequest(loginSchema), login);
+router.post("/refresh", authRateLimiter, refreshAccessToken);
 router.get("/logout", logout);
 router.get("/getuser", isAuthenticated, getUser);
 router.put(

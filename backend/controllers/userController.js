@@ -1,7 +1,13 @@
 import { catchAsyncErrors } from "../middlewares/catchAsyncError.js";
 import { User } from "../models/userSchema.js";
 import ErrorHandler from "../middlewares/error.js";
-import { getCookieOptions, sendToken } from "../utils/jwtToken.js";
+import { sendToken } from "../utils/jwtToken.js";
+import {
+  clearAuthCookies,
+  revokeRefreshToken,
+  rotateRefreshSession,
+  setAuthCookies,
+} from "../services/tokenService.js";
 import validator from "validator";
 import {
   destroyResumeAsset,
@@ -51,7 +57,7 @@ export const register = catchAsyncErrors(async (req, res, next) => {
     password,
     role,
   });
-  sendToken(user, 201, res, "User registered successfully.");
+  await sendToken(user, 201, res, "User registered successfully.", req);
 });
 
 export const login = catchAsyncErrors(async (req, res, next) => {
@@ -74,38 +80,45 @@ export const login = catchAsyncErrors(async (req, res, next) => {
     );
   }
   user.password = undefined;
-  sendToken(user, 200, res, "User logged in successfully.");
+  await sendToken(user, 200, res, "User logged in successfully.", req);
 });
 
 export const logout = catchAsyncErrors(async (req, res, next) => {
-  res
-    .status(200)
-    .cookie("token", "", {
-      ...getCookieOptions(),
-      expires: new Date(0),
-    })
-    .json({
-      success: true,
-      message: "Logged out successfully.",
-    });
+  await revokeRefreshToken(req.cookies.refreshToken);
+
+  clearAuthCookies(res).status(200).json({
+    success: true,
+    message: "Logged out successfully.",
+  });
 });
 
+const sanitizeUser = (user) => ({
+  _id: user._id,
+  name: user.name,
+  email: user.email,
+  phone: user.phone,
+  role: user.role,
+  resume: user.resume,
+  profile: user.profile,
+});
+
+export const refreshAccessToken = catchAsyncErrors(async (req, res, next) => {
+  const { user, accessToken, refreshToken } = await rotateRefreshSession(
+    req.cookies.refreshToken,
+    req
+  );
+
+  setAuthCookies(res, accessToken, refreshToken).status(200).json({
+    success: true,
+    message: "Session refreshed successfully.",
+    user: sanitizeUser(user),
+  });
+});
 
 export const getUser = catchAsyncErrors((req, res, next) => {
-  const user = req.user;
-  const sanitizedUser = {
-    _id: user._id,
-    name: user.name,
-    email: user.email,
-    phone: user.phone,
-    role: user.role,
-    resume: user.resume,
-    profile: user.profile,
-  };
-
   res.status(200).json({
     success: true,
-    user: sanitizedUser,
+    user: sanitizeUser(req.user),
   });
 });
 
