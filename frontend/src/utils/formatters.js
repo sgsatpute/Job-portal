@@ -13,3 +13,11 @@ export const formatDate = (date) => {
   if (!date) return "Not recorded";
   return new Date(date).toLocaleDateString();
 };
+
+export const formatDateTime = (date) => {
+  if (!date) return "Not scheduled";
+  return new Date(date).toLocaleString([], {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+};

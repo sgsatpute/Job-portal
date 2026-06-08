@@ -75,6 +75,8 @@ JobPortal has two user roles:
 - Reuse profile resume while applying, or upload a resume during the application flow.
 - Employer-side resume links while reviewing applications.
 - Application statuses: `Pending`, `Shortlisted`, and `Rejected`.
+- Employer interview scheduling and cancellation for shortlisted candidates.
+- Candidate dashboard interview details with schedule, mode, location/link, and notes.
 - Job seeker dashboard with total applications and status counts.
 - Employer dashboard with total jobs posted and total applications received.
 - AI Career Assistant for job-fit scoring, resume tips, gaps, next steps, and interview questions.
@@ -86,6 +88,7 @@ JobPortal has two user roles:
 - Employer AI job description generator while posting jobs.
 - Real-time notification center powered by Socket.IO.
 - Candidate notifications for shortlisted/rejected application updates.
+- Candidate notifications for scheduled/cancelled interviews.
 - Employer notifications for new applications and resume submissions.
 - Skill-based job recommendations for job seekers.
 - Candidate ranking recommendations for employers.
@@ -381,6 +384,8 @@ limit=9
 | POST | `/application/post` | Job Seeker | Submit application |
 | GET | `/application/employer/getall` | Employer | Get received applications |
 | PUT | `/application/employer/status/:id` | Employer | Update application status |
+| PUT | `/application/employer/interview/:id` | Employer | Schedule or reschedule interview |
+| PUT | `/application/employer/interview/:id/cancel` | Employer | Cancel scheduled interview |
 | GET | `/application/jobseeker/dashboard` | Job Seeker | Get dashboard stats |
 | GET | `/application/jobseeker/getall` | Job Seeker | Get own applications |
 | DELETE | `/application/delete/:id` | Job Seeker | Delete own application |
@@ -663,7 +668,6 @@ The frontend includes `frontend/vercel.json` with a rewrite to `index.html`. Mak
 - Admin panel for monitoring users, jobs, and applications.
 - Saved jobs for job seekers.
 - Employer applicant notes.
-- Interview scheduling between employers and shortlisted candidates.
 - Advanced MongoDB Atlas Search or Elasticsearch ranking.
 - Public landing page that does not require login.
 - Seed script for demo users and demo jobs.

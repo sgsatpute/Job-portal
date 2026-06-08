@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   APPLICATION_STATUSES,
+  INTERVIEW_MODES,
   USER_ROLES,
 } from "../constants/applicationConstants.js";
 import { JOB_TYPES } from "../constants/jobConstants.js";
@@ -29,6 +30,7 @@ const optionalNumber = z.preprocess((value) => {
 const roleSchema = z.enum(Object.values(USER_ROLES));
 const jobTypeSchema = z.enum(JOB_TYPES);
 const statusSchema = z.enum(APPLICATION_STATUSES);
+const interviewModeSchema = z.enum(INTERVIEW_MODES);
 
 export const registerSchema = z.object({
   body: z.object({
@@ -171,4 +173,23 @@ export const updateApplicationStatusSchema = z.object({
   body: z.object({
     status: statusSchema,
   }),
+});
+
+export const scheduleInterviewSchema = z.object({
+  body: z
+    .object({
+      scheduledAt: z.coerce.date(),
+      mode: interviewModeSchema,
+      location: trimString(3, 250),
+      notes: optionalTrimString(1000),
+    })
+    .superRefine((data, ctx) => {
+      if (data.scheduledAt <= new Date()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["scheduledAt"],
+          message: "Interview date and time must be in the future.",
+        });
+      }
+    }),
 });

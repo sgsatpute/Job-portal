@@ -1,5 +1,12 @@
 import { useCallback, useContext, useEffect, useState } from "react";
-import { FaExternalLinkAlt, FaFilePdf, FaRobot, FaTrash } from "react-icons/fa";
+import {
+  FaCalendarAlt,
+  FaExternalLinkAlt,
+  FaFilePdf,
+  FaRobot,
+  FaTimes,
+  FaTrash,
+} from "react-icons/fa";
 import {
   Cell,
   Pie,
@@ -18,9 +25,17 @@ import {
   ProviderBadge,
   ScoreBlock,
 } from "../AI/AIResultBlocks";
-import { APPLICATION_STATUSES } from "../../constants/jobOptions";
+import { APPLICATION_STATUSES, INTERVIEW_MODES } from "../../constants/jobOptions";
 import { USER_ROLES } from "../../constants/userRoles";
-import { formatDate } from "../../utils/formatters";
+import { formatDate, formatDateTime } from "../../utils/formatters";
+
+const toDateTimeLocalValue = (value) => {
+  const date = value ? new Date(value) : new Date(Date.now() + 24 * 60 * 60 * 1000);
+  date.setMinutes(0, 0, 0);
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+    .toISOString()
+    .slice(0, 16);
+};
 
 const MyApplications = () => {
   const { user, setUser } = useContext(Context);
@@ -157,6 +172,29 @@ const MyApplications = () => {
     }
   };
 
+  const scheduleInterview = async (id, interviewPayload) => {
+    const { data } = await api.put(
+      `/application/employer/interview/${id}`,
+      interviewPayload
+    );
+    toast.success(data.message);
+    setApplications((current) =>
+      current.map((application) =>
+        application._id === id ? data.application : application
+      )
+    );
+  };
+
+  const cancelInterview = async (id) => {
+    const { data } = await api.put(`/application/employer/interview/${id}/cancel`);
+    toast.success(data.message);
+    setApplications((current) =>
+      current.map((application) =>
+        application._id === id ? data.application : application
+      )
+    );
+  };
+
   if (loading) {
     return <LoadingSpinner label="Loading applications..." />;
   }
@@ -274,6 +312,8 @@ const MyApplications = () => {
               key={application._id}
               application={application}
               updateApplicationStatus={updateApplicationStatus}
+              scheduleInterview={scheduleInterview}
+              cancelInterview={cancelInterview}
             />
           ))}
         </div>
@@ -395,6 +435,45 @@ const ResumeAnalysisPanel = ({ result }) => {
   );
 };
 
+const InterviewDetails = ({ interview }) => {
+  if (!interview?.status || interview.status === "Not Scheduled") return null;
+
+  const isCancelled = interview.status === "Cancelled";
+
+  return (
+    <div
+      className={`mt-4 rounded-lg border px-4 py-3 text-sm ${
+        isCancelled
+          ? "border-red-200 bg-red-50 text-red-800"
+          : "border-emerald-200 bg-emerald-50 text-emerald-800"
+      }`}
+    >
+      <div className="flex flex-wrap items-center gap-2 font-bold">
+        <FaCalendarAlt />
+        <span>Interview {interview.status}</span>
+      </div>
+      <div className="mt-2 grid gap-1 sm:grid-cols-2">
+        <p>
+          <span className="font-semibold">When:</span>{" "}
+          {formatDateTime(interview.scheduledAt)}
+        </p>
+        <p>
+          <span className="font-semibold">Mode:</span> {interview.mode || "Not set"}
+        </p>
+        <p className="sm:col-span-2">
+          <span className="font-semibold">Location/Link:</span>{" "}
+          {interview.location || "Not provided"}
+        </p>
+        {interview.notes && (
+          <p className="sm:col-span-2">
+            <span className="font-semibold">Notes:</span> {interview.notes}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const JobSeekerCard = ({ application, deleteApplication }) => {
   const job = application.jobID;
   const employer = application.employerID?.user;
@@ -430,6 +509,7 @@ const JobSeekerCard = ({ application, deleteApplication }) => {
           <p className="mt-4 text-sm leading-6 text-slate-600">
             {application.coverLetter}
           </p>
+          <InterviewDetails interview={application.interview} />
         </div>
         <div className="flex shrink-0 flex-wrap gap-2">
           <a
@@ -455,10 +535,25 @@ const JobSeekerCard = ({ application, deleteApplication }) => {
   );
 };
 
-const EmployerCard = ({ application, updateApplicationStatus }) => {
+const EmployerCard = ({
+  application,
+  updateApplicationStatus,
+  scheduleInterview,
+  cancelInterview,
+}) => {
   const job = application.jobID;
   const [aiSummary, setAiSummary] = useState(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
+  const [interviewLoading, setInterviewLoading] = useState(false);
+  const [interviewForm, setInterviewForm] = useState({
+    scheduledAt: toDateTimeLocalValue(application.interview?.scheduledAt),
+    mode: application.interview?.mode || "Video Call",
+    location: application.interview?.location || "",
+    notes: application.interview?.notes || "",
+  });
+
+  const isInterviewScheduled = application.interview?.status === "Scheduled";
+  const canScheduleInterview = application.status !== "Rejected";
 
   const summarizeCandidate = async () => {
     setSummaryLoading(true);
@@ -471,6 +566,56 @@ const EmployerCard = ({ application, updateApplicationStatus }) => {
       toast.error(getErrorMessage(error, "Unable to summarize candidate."));
     } finally {
       setSummaryLoading(false);
+    }
+  };
+
+  const updateInterviewField = (field, value) => {
+    setInterviewForm((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  };
+
+  const handleScheduleInterview = async (event) => {
+    event.preventDefault();
+    if (!interviewForm.scheduledAt || !interviewForm.mode || !interviewForm.location) {
+      toast.error("Please enter interview time, mode, and location/link.");
+      return;
+    }
+    if (!canScheduleInterview) {
+      toast.error("Rejected applications cannot be scheduled for interview.");
+      return;
+    }
+
+    const scheduledDate = new Date(interviewForm.scheduledAt);
+    if (Number.isNaN(scheduledDate.getTime()) || scheduledDate <= new Date()) {
+      toast.error("Interview date and time must be in the future.");
+      return;
+    }
+
+    setInterviewLoading(true);
+    try {
+      await scheduleInterview(application._id, {
+        scheduledAt: scheduledDate.toISOString(),
+        mode: interviewForm.mode,
+        location: interviewForm.location,
+        notes: interviewForm.notes,
+      });
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Unable to schedule interview."));
+    } finally {
+      setInterviewLoading(false);
+    }
+  };
+
+  const handleCancelInterview = async () => {
+    setInterviewLoading(true);
+    try {
+      await cancelInterview(application._id);
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Unable to cancel interview."));
+    } finally {
+      setInterviewLoading(false);
     }
   };
 
@@ -509,6 +654,7 @@ const EmployerCard = ({ application, updateApplicationStatus }) => {
           <p className="mt-4 text-sm leading-6 text-slate-600">
             {application.coverLetter}
           </p>
+          <InterviewDetails interview={application.interview} />
         </div>
 
         <div className="flex shrink-0 flex-col gap-3 sm:min-w-[220px]">
@@ -548,6 +694,88 @@ const EmployerCard = ({ application, updateApplicationStatus }) => {
           </label>
         </div>
       </div>
+      <form
+        onSubmit={handleScheduleInterview}
+        className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-4"
+      >
+        <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <h3 className="text-sm font-bold text-slate-950">Interview Schedule</h3>
+          {isInterviewScheduled && (
+            <button
+              type="button"
+              onClick={handleCancelInterview}
+              className="danger-btn px-3 py-2"
+              disabled={interviewLoading}
+            >
+              <FaTimes />
+              Cancel Interview
+            </button>
+          )}
+        </div>
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+          <label>
+            <span className="field-label">Date & Time</span>
+            <input
+              type="datetime-local"
+              value={interviewForm.scheduledAt}
+              onChange={(event) =>
+                updateInterviewField("scheduledAt", event.target.value)
+              }
+              className="field mt-2"
+              disabled={!canScheduleInterview}
+            />
+          </label>
+          <label>
+            <span className="field-label">Mode</span>
+            <select
+              value={interviewForm.mode}
+              onChange={(event) => updateInterviewField("mode", event.target.value)}
+              className="field mt-2"
+              disabled={!canScheduleInterview}
+            >
+              {INTERVIEW_MODES.map((mode) => (
+                <option key={mode} value={mode}>
+                  {mode}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="lg:col-span-2">
+            <span className="field-label">Location Or Meeting Link</span>
+            <input
+              type="text"
+              value={interviewForm.location}
+              onChange={(event) =>
+                updateInterviewField("location", event.target.value)
+              }
+              className="field mt-2"
+              placeholder="Google Meet link, phone number, or office address"
+              disabled={!canScheduleInterview}
+            />
+          </label>
+          <label className="md:col-span-2 lg:col-span-3">
+            <span className="field-label">Notes</span>
+            <input
+              type="text"
+              value={interviewForm.notes}
+              onChange={(event) => updateInterviewField("notes", event.target.value)}
+              className="field mt-2"
+              placeholder="Topics, documents, or preparation notes"
+              disabled={!canScheduleInterview}
+            />
+          </label>
+          <div className="flex items-end">
+            <button
+              type="submit"
+              className="primary-btn w-full"
+              disabled={interviewLoading || !canScheduleInterview}
+            >
+              <FaCalendarAlt />
+              {interviewLoading ? "Saving..." : "Schedule"}
+            </button>
+          </div>
+        </div>
+      </form>
       {aiSummary && (
         <div className="mt-5 rounded-lg border border-brand-100 bg-brand-50/40 p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">

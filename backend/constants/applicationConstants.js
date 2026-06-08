@@ -4,6 +4,18 @@ export const APPLICATION_STATUSES = Object.freeze([
   "Rejected",
 ]);
 
+export const INTERVIEW_MODES = Object.freeze([
+  "Video Call",
+  "Phone Call",
+  "On-site",
+]);
+
+export const INTERVIEW_STATUSES = Object.freeze([
+  "Not Scheduled",
+  "Scheduled",
+  "Cancelled",
+]);
+
 export const USER_ROLES = Object.freeze({
   JOB_SEEKER: "Job Seeker",
   EMPLOYER: "Employer",

@@ -34,6 +34,14 @@ const baseTemplate = ({ title, body, actionUrl, actionLabel }) => `
   </div>
 `;
 
+const formatSchedule = (scheduledAt) =>
+  scheduledAt
+    ? new Date(scheduledAt).toLocaleString("en-IN", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      })
+    : "the scheduled time";
+
 export const emailTemplates = {
   welcome: ({ name }) => ({
     subject: "Welcome to JobPortal",
@@ -63,6 +71,22 @@ export const emailTemplates = {
       body: "Use the button below to reset your password.",
       actionUrl: resetUrl,
       actionLabel: "Reset Password",
+    }),
+  }),
+  interviewScheduled: ({ name, jobTitle, scheduledAt, mode, location }) => ({
+    subject: `Interview scheduled for ${jobTitle}`,
+    html: baseTemplate({
+      title: "Interview scheduled",
+      body: `${name}, your interview for ${jobTitle} is scheduled on ${formatSchedule(
+        scheduledAt
+      )}. Mode: ${mode}. Location/link: ${location}.`,
+    }),
+  }),
+  interviewCancelled: ({ name, jobTitle }) => ({
+    subject: `Interview cancelled for ${jobTitle}`,
+    html: baseTemplate({
+      title: "Interview cancelled",
+      body: `${name}, your interview for ${jobTitle} has been cancelled by the employer.`,
     }),
   }),
 };

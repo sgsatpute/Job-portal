@@ -30,3 +30,9 @@ export const APPLICATION_STATUSES = Object.freeze([
   "Shortlisted",
   "Rejected",
 ]);
+
+export const INTERVIEW_MODES = Object.freeze([
+  "Video Call",
+  "Phone Call",
+  "On-site",
+]);

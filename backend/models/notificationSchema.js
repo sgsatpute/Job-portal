@@ -15,6 +15,8 @@ const notificationSchema = new mongoose.Schema({
       "APPLICATION_SHORTLISTED",
       "APPLICATION_REJECTED",
       "RESUME_UPLOADED",
+      "INTERVIEW_SCHEDULED",
+      "INTERVIEW_CANCELLED",
       "SYSTEM",
     ],
   },

@@ -183,6 +183,40 @@ describeWithDb("Job and application APIs", () => {
       "APPLICATION_SHORTLISTED"
     );
 
+    const scheduledAt = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
+    const interviewResponse = await employer.agent
+      .put(`/api/v1/application/employer/interview/${applicationResponse.body.application._id}`)
+      .send({
+        scheduledAt: scheduledAt.toISOString(),
+        mode: "Video Call",
+        location: "https://meet.example.com/react-interview",
+        notes: "Prepare to discuss React components and API integration.",
+      })
+      .expect(200);
+
+    expect(interviewResponse.body.application.status).toBe("Shortlisted");
+    expect(interviewResponse.body.application.interview).toMatchObject({
+      mode: "Video Call",
+      location: "https://meet.example.com/react-interview",
+      status: "Scheduled",
+    });
+
+    const interviewNotifications = await seeker.agent
+      .get("/api/v1/notifications")
+      .expect(200);
+
+    expect(interviewNotifications.body.notifications[0].type).toBe(
+      "INTERVIEW_SCHEDULED"
+    );
+
+    const cancelInterviewResponse = await employer.agent
+      .put(`/api/v1/application/employer/interview/${applicationResponse.body.application._id}/cancel`)
+      .expect(200);
+
+    expect(cancelInterviewResponse.body.application.interview.status).toBe(
+      "Cancelled"
+    );
+
     const seekerDashboard = await seeker.agent
       .get("/api/v1/application/jobseeker/dashboard")
       .expect(200);
@@ -194,5 +228,8 @@ describeWithDb("Job and application APIs", () => {
       rejected: 0,
     });
     expect(seekerDashboard.body.applications[0].status).toBe("Shortlisted");
+    expect(seekerDashboard.body.applications[0].interview.status).toBe(
+      "Cancelled"
+    );
   });
 });

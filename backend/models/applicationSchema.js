@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 import validator from "validator";
 import {
   APPLICATION_STATUSES,
+  INTERVIEW_MODES,
+  INTERVIEW_STATUSES,
   USER_ROLES,
 } from "../constants/applicationConstants.js";
 
@@ -48,6 +50,38 @@ const applicationSchema = new mongoose.Schema({
     type: String,
     enum: APPLICATION_STATUSES,
     default: "Pending",
+  },
+  interview: {
+    scheduledAt: {
+      type: Date,
+    },
+    mode: {
+      type: String,
+      enum: INTERVIEW_MODES,
+    },
+    location: {
+      type: String,
+      maxLength: [250, "Interview location cannot exceed 250 characters!"],
+    },
+    notes: {
+      type: String,
+      maxLength: [1000, "Interview notes cannot exceed 1000 characters!"],
+    },
+    status: {
+      type: String,
+      enum: INTERVIEW_STATUSES,
+      default: "Not Scheduled",
+    },
+    scheduledBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    scheduledOn: {
+      type: Date,
+    },
+    cancelledOn: {
+      type: Date,
+    },
   },
   jobID: {
     type: mongoose.Schema.Types.ObjectId,

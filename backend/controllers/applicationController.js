@@ -262,6 +262,143 @@ export const updateApplicationStatus = catchAsyncErrors(async (req, res, next) =
   });
 });
 
+const formatInterviewDate = (scheduledAt) =>
+  new Date(scheduledAt).toLocaleString("en-IN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
+export const scheduleInterview = catchAsyncErrors(async (req, res, next) => {
+  if (req.user.role !== USER_ROLES.EMPLOYER) {
+    return next(new ErrorHandler("Only employers can schedule interviews.", 403));
+  }
+
+  const { id } = req.params;
+  const { scheduledAt, mode, location, notes = "" } = req.body;
+  const application = await Application.findById(id);
+
+  if (!application) {
+    return next(new ErrorHandler("Application not found.", 404));
+  }
+
+  if (application.employerID.user.toString() !== req.user._id.toString()) {
+    return next(new ErrorHandler("You can schedule only your own applications.", 403));
+  }
+
+  if (application.status === "Rejected") {
+    return next(new ErrorHandler("Cannot schedule interview for a rejected application.", 400));
+  }
+
+  const job = await Job.findById(application.jobID).select("title");
+  application.status = "Shortlisted";
+  application.interview = {
+    scheduledAt,
+    mode,
+    location: location.trim(),
+    notes: notes?.trim() || "",
+    status: "Scheduled",
+    scheduledBy: req.user._id,
+    scheduledOn: new Date(),
+    cancelledOn: undefined,
+  };
+  await application.save();
+
+  await Promise.allSettled([
+    createNotification({
+      recipient: application.applicantID.user,
+      type: "INTERVIEW_SCHEDULED",
+      title: "Interview scheduled",
+      message: `Your interview for ${job?.title || "a job"} is scheduled on ${formatInterviewDate(
+        scheduledAt
+      )}.`,
+      data: {
+        applicationId: application._id,
+        jobId: application.jobID,
+        scheduledAt,
+        mode,
+      },
+    }),
+    enqueueEmail({
+      to: application.email,
+      template: "interviewScheduled",
+      payload: {
+        name: application.name,
+        jobTitle: job?.title || "your selected role",
+        scheduledAt,
+        mode,
+        location,
+      },
+    }),
+  ]);
+
+  const populatedApplication = await Application.findById(application._id)
+    .populate("jobID", "title category jobType city country")
+    .populate("applicantID.user", "name email phone resume");
+
+  res.status(200).json({
+    success: true,
+    message: "Interview scheduled successfully.",
+    application: populatedApplication,
+  });
+});
+
+export const cancelInterview = catchAsyncErrors(async (req, res, next) => {
+  if (req.user.role !== USER_ROLES.EMPLOYER) {
+    return next(new ErrorHandler("Only employers can cancel interviews.", 403));
+  }
+
+  const { id } = req.params;
+  const application = await Application.findById(id);
+
+  if (!application) {
+    return next(new ErrorHandler("Application not found.", 404));
+  }
+
+  if (application.employerID.user.toString() !== req.user._id.toString()) {
+    return next(new ErrorHandler("You can cancel only your own interviews.", 403));
+  }
+
+  if (application.interview?.status !== "Scheduled") {
+    return next(new ErrorHandler("No scheduled interview found for this application.", 400));
+  }
+
+  application.interview.status = "Cancelled";
+  application.interview.cancelledOn = new Date();
+  await application.save();
+  const job = await Job.findById(application.jobID).select("title");
+
+  await Promise.allSettled([
+    createNotification({
+      recipient: application.applicantID.user,
+      type: "INTERVIEW_CANCELLED",
+      title: "Interview cancelled",
+      message: `Your interview for ${job?.title || "a job"} has been cancelled.`,
+      data: {
+        applicationId: application._id,
+        jobId: application.jobID,
+      },
+    }),
+    enqueueEmail({
+      to: application.email,
+      template: "interviewCancelled",
+      payload: {
+        name: application.name,
+        jobTitle: job?.title || "your selected role",
+      },
+    }),
+  ]);
+
+  const populatedApplication = await Application.findById(application._id)
+    .populate("jobID", "title category jobType city country")
+    .populate("applicantID.user", "name email phone resume");
+
+  res.status(200).json({
+    success: true,
+    message: "Interview cancelled successfully.",
+    application: populatedApplication,
+  });
+});
+
 export const jobseekerDashboard = catchAsyncErrors(async (req, res, next) => {
   if (req.user.role !== USER_ROLES.JOB_SEEKER) {
     return next(new ErrorHandler("Only job seekers can access this dashboard.", 403));
