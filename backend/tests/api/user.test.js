@@ -40,7 +40,7 @@ describeWithDb("User API", () => {
       .expect(400);
 
     expect(response.body.success).toBe(false);
-    expect(response.body.message).toContain("Invalid request");
+    expect(response.body.message).toContain("body.email");
   });
 
   it("registers, authenticates, and returns the current user", async () => {
