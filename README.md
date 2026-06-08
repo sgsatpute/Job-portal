@@ -106,7 +106,7 @@ JobPortal has two user roles:
 | AI | Gemini API free tier, smart fallback advisor |
 | External Jobs | Adzuna Jobs API, optional |
 | Deployment | Vercel for frontend, Render for backend |
-| CI | GitHub Actions |
+| DevOps | Docker, Docker Compose, GitHub Actions |
 
 ## Architecture
 
@@ -133,6 +133,7 @@ flowchart LR
 |   |-- routes
 |   |-- services
 |   |-- utils
+|   |-- Dockerfile
 |   |-- app.js
 |   |-- server.js
 |   `-- .env.example
@@ -142,12 +143,15 @@ flowchart LR
 |   |   |-- components
 |   |   |-- constants
 |   |   `-- utils
+|   |-- Dockerfile
+|   |-- nginx.conf
 |   |-- vercel.json
 |   `-- .env.example
 |-- docs
 |   `-- screenshots
 |-- .github
 |   `-- workflows
+|-- docker-compose.yml
 |-- render.yaml
 `-- README.md
 ```
@@ -161,6 +165,7 @@ flowchart LR
 - MongoDB Atlas database or local MongoDB.
 - Cloudinary account for resume uploads.
 - Optional Adzuna developer credentials for live external jobs.
+- Docker Desktop, only if using the containerized setup.
 
 ### 1. Clone The Repository
 
@@ -183,11 +188,13 @@ PORT=4000
 NODE_ENV=development
 FRONTEND_URL=http://localhost:5173
 DB_URL=mongodb://127.0.0.1:27017/jobportal
+DB_NAME=Job_Portal
 JWT_SECRET_KEY=replace-with-a-long-random-secret
 JWT_EXPIRE=7d
 COOKIE_EXPIRE=7
 COOKIE_SAME_SITE=lax
 COOKIE_SECURE=false
+ENABLE_CSRF=false
 CLOUDINARY_CLOUD_NAME=your-cloudinary-cloud-name
 CLOUDINARY_API_KEY=your-cloudinary-api-key
 CLOUDINARY_API_SECRET=your-cloudinary-api-secret
@@ -242,6 +249,25 @@ Frontend should run on:
 ```text
 http://localhost:5173
 ```
+
+### 4. Docker Setup
+
+Docker Compose starts the frontend, backend, MongoDB, and Redis together:
+
+```sh
+docker compose up --build
+```
+
+Container URLs:
+
+```text
+Frontend: http://localhost:5173
+Backend:  http://localhost:4000
+MongoDB:  mongodb://localhost:27017/jobportal
+Redis:    localhost:6379
+```
+
+The Docker setup uses local placeholder secrets and optional AI/external-job settings. For real demos, set Gemini, Adzuna, and Cloudinary credentials through environment variables or a compose override file instead of committing secrets.
 
 ## Demo Flow
 
@@ -433,11 +459,13 @@ PORT=4000
 NODE_ENV=production
 FRONTEND_URL=https://job-portal-blue-six.vercel.app
 DB_URL=your-mongodb-atlas-url
+DB_NAME=Job_Portal
 JWT_SECRET_KEY=your-production-jwt-secret
 JWT_EXPIRE=7d
 COOKIE_EXPIRE=7
 COOKIE_SAME_SITE=none
 COOKIE_SECURE=true
+ENABLE_CSRF=false
 CLOUDINARY_CLOUD_NAME=your-cloudinary-cloud-name
 CLOUDINARY_API_KEY=your-cloudinary-api-key
 CLOUDINARY_API_SECRET=your-cloudinary-api-secret
@@ -515,6 +543,7 @@ Frontend:
 cd frontend
 npm run lint
 npm run build
+npm audit --omit=dev --audit-level=high
 ```
 
 Backend:
@@ -522,6 +551,7 @@ Backend:
 ```sh
 cd backend
 npm install
+npm audit --audit-level=high
 npm start
 ```
 
@@ -530,6 +560,8 @@ CI is configured through GitHub Actions in:
 ```text
 .github/workflows/ci.yml
 ```
+
+The CI pipeline runs frontend lint/build, dependency audits, backend syntax checks, and Docker image builds.
 
 ## Troubleshooting
 
