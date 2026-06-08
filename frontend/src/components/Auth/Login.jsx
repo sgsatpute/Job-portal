@@ -130,6 +130,12 @@ const Login = () => {
             <button type="submit" className="primary-btn w-full" disabled={loading}>
               {loading ? "Logging in..." : "Login"}
             </button>
+            <Link
+              to="/password/forgot"
+              className="block text-center text-sm font-semibold text-brand-700 hover:text-brand-900"
+            >
+              Forgot password?
+            </Link>
             <Link to="/register" className="secondary-btn w-full">
               Create Account
             </Link>

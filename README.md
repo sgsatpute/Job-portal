@@ -94,6 +94,7 @@ JobPortal has two user roles:
 - Job seeker application status chart.
 - Optional Redis/BullMQ background email queue.
 - Optional Nodemailer email templates for welcome, application, status, and password reset flows.
+- Secure forgot/reset password flow with hashed reset tokens and expiry.
 - External live jobs integration through Adzuna API.
 - Tailwind CSS UI.
 - Responsive navbar with `JobPortal` branding.
@@ -343,6 +344,8 @@ https://job-portal-ftw4.onrender.com/api/v1
 | --- | --- | --- | --- |
 | POST | `/user/register` | Public | Register job seeker or employer |
 | POST | `/user/login` | Public | Login and receive auth cookie |
+| POST | `/user/password/forgot` | Public | Send password reset link if the account exists |
+| PUT | `/user/password/reset/:token` | Public | Reset password with a valid reset token |
 | GET | `/user/logout` | Public | Clear auth cookie |
 | GET | `/user/getuser` | Required | Get current user |
 | PUT | `/user/profile` | Required | Update profile or company details |
@@ -547,6 +550,7 @@ After Vercel deploys, update Render `FRONTEND_URL` to the final Vercel productio
 - Rotate MongoDB, Cloudinary, JWT, Adzuna, and Gemini credentials if they were ever exposed in Git history.
 - Use long random values for `JWT_SECRET_KEY`.
 - Access tokens are short-lived. Refresh tokens are stored as SHA-256 hashes in MongoDB and rotated through `/api/v1/user/refresh`.
+- Password reset tokens are stored as SHA-256 hashes and expire after 30 minutes.
 - Logout revokes the active refresh token and clears auth cookies.
 - Keep production cookies secure with `COOKIE_SECURE=true`.
 - Keep `COOKIE_SAME_SITE=none` only when frontend and backend are hosted on different domains.
@@ -659,8 +663,8 @@ The frontend includes `frontend/vercel.json` with a rewrite to `index.html`. Mak
 - Admin panel for monitoring users, jobs, and applications.
 - Saved jobs for job seekers.
 - Employer applicant notes.
-- Email notifications for shortlisted/rejected status.
-- Job recommendation engine.
+- Interview scheduling between employers and shortlisted candidates.
+- Advanced MongoDB Atlas Search or Elasticsearch ranking.
 - Public landing page that does not require login.
 - Seed script for demo users and demo jobs.
 - More screenshots for authenticated workflows.

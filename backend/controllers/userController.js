@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { catchAsyncErrors } from "../middlewares/catchAsyncError.js";
 import { User } from "../models/userSchema.js";
 import ErrorHandler from "../middlewares/error.js";
@@ -15,6 +16,7 @@ import {
 } from "../services/resumeService.js";
 import { enqueueEmail } from "../services/queueService.js";
 import { USER_ROLES } from "../constants/applicationConstants.js";
+import { env } from "../config/env.js";
 
 const validateAuthFields = ({ name, email, phone, password, role }, isRegister) => {
   if (isRegister && (!name || !email || !phone || !password || !role)) {
@@ -40,6 +42,14 @@ const validateAuthFields = ({ name, email, phone, password, role }, isRegister) 
   }
   return null;
 };
+
+const hashResetToken = (token) =>
+  crypto.createHash("sha256").update(token).digest("hex");
+
+const getPrimaryFrontendUrl = () =>
+  env.FRONTEND_URL.split(",")[0].trim().replace(/\/$/, "");
+
+const createPasswordResetToken = () => crypto.randomBytes(32).toString("hex");
 
 export const register = catchAsyncErrors(async (req, res, next) => {
   const { name, email, phone, password, role } = req.body;
@@ -87,6 +97,63 @@ export const login = catchAsyncErrors(async (req, res, next) => {
   }
   user.password = undefined;
   await sendToken(user, 200, res, "User logged in successfully.", req);
+});
+
+export const forgotPassword = catchAsyncErrors(async (req, res, next) => {
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+
+  if (user) {
+    const resetToken = createPasswordResetToken();
+    user.resetPasswordToken = hashResetToken(resetToken);
+    user.resetPasswordExpire = new Date(Date.now() + 30 * 60 * 1000);
+    await user.save({ validateBeforeSave: false });
+
+    const resetUrl = `${getPrimaryFrontendUrl()}/password/reset/${resetToken}`;
+    await enqueueEmail({
+      to: user.email,
+      template: "passwordReset",
+      payload: {
+        resetUrl,
+      },
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    message:
+      "If an account exists with that email, a password reset link has been sent.",
+  });
+});
+
+export const resetPassword = catchAsyncErrors(async (req, res, next) => {
+  const { token } = req.params;
+  const { password } = req.body;
+
+  if (!password || password.length < 8 || password.length > 32) {
+    return next(
+      new ErrorHandler("Password must contain between 8 and 32 characters.", 400)
+    );
+  }
+
+  const user = await User.findOne({
+    resetPasswordToken: hashResetToken(token),
+    resetPasswordExpire: { $gt: new Date() },
+  }).select("+password +resetPasswordToken +resetPasswordExpire");
+
+  if (!user) {
+    return next(new ErrorHandler("Password reset token is invalid or expired.", 400));
+  }
+
+  user.password = password;
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpire = undefined;
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    message: "Password reset successfully. You can now log in.",
+  });
 });
 
 export const logout = catchAsyncErrors(async (req, res, next) => {

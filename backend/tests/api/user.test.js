@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import request from "supertest";
 import {
   clearTestDb,
@@ -7,6 +8,7 @@ import {
 
 let app;
 let RefreshToken;
+let User;
 const describeWithDb = process.env.TEST_DB_URL ? describe : describe.skip;
 
 const employerPayload = {
@@ -22,6 +24,7 @@ describeWithDb("User API", () => {
     await connectTestDb();
     app = (await import("../../app.js")).default;
     RefreshToken = (await import("../../models/refreshTokenSchema.js")).RefreshToken;
+    User = (await import("../../models/userSchema.js")).User;
   });
 
   afterEach(async () => {
@@ -124,6 +127,66 @@ describeWithDb("User API", () => {
       .expect(400);
 
     expect(loginResponse.body.message).toBe("Invalid email or password.");
+  });
+
+  it("supports forgot password and resets login credentials", async () => {
+    await request(app)
+      .post("/api/v1/user/register")
+      .send(employerPayload)
+      .expect(201);
+
+    const forgotResponse = await request(app)
+      .post("/api/v1/user/password/forgot")
+      .send({ email: employerPayload.email })
+      .expect(200);
+
+    expect(forgotResponse.body.message).toContain("password reset link");
+
+    const userAfterForgot = await User.findOne({
+      email: employerPayload.email,
+    }).select("+resetPasswordToken +resetPasswordExpire");
+    expect(userAfterForgot.resetPasswordToken).toBeTruthy();
+    expect(userAfterForgot.resetPasswordExpire.getTime()).toBeGreaterThan(Date.now());
+
+    await request(app)
+      .put("/api/v1/user/password/reset/invalid-reset-token-value")
+      .send({ password: "NewPassword123" })
+      .expect(400);
+
+    const resetToken = "test-reset-token-value-1234567890abcdef";
+    userAfterForgot.resetPasswordToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+    userAfterForgot.resetPasswordExpire = new Date(Date.now() + 30 * 60 * 1000);
+    await userAfterForgot.save({ validateBeforeSave: false });
+
+    const resetResponse = await request(app)
+      .put(`/api/v1/user/password/reset/${resetToken}`)
+      .send({ password: "NewPassword123" })
+      .expect(200);
+
+    expect(resetResponse.body.message).toBe(
+      "Password reset successfully. You can now log in."
+    );
+
+    await request(app)
+      .post("/api/v1/user/login")
+      .send({
+        email: employerPayload.email,
+        password: employerPayload.password,
+        role: employerPayload.role,
+      })
+      .expect(400);
+
+    await request(app)
+      .post("/api/v1/user/login")
+      .send({
+        email: employerPayload.email,
+        password: "NewPassword123",
+        role: employerPayload.role,
+      })
+      .expect(200);
   });
 
   it("blocks protected user routes when no cookie is present", async () => {

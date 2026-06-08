@@ -48,6 +48,21 @@ export const loginSchema = z.object({
   }),
 });
 
+export const forgotPasswordSchema = z.object({
+  body: z.object({
+    email: z.string().trim().email(),
+  }),
+});
+
+export const resetPasswordSchema = z.object({
+  params: z.object({
+    token: z.string().trim().min(32).max(128),
+  }),
+  body: z.object({
+    password: z.string().min(8).max(32),
+  }),
+});
+
 export const updateProfileSchema = z.object({
   body: z.object({
     name: optionalTrimString(30),

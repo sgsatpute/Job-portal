@@ -15,9 +15,14 @@ const refreshClient = axios.create({
 let refreshPromise = null;
 
 const shouldSkipRefresh = (url = "") =>
-  ["/user/login", "/user/register", "/user/logout", "/user/refresh"].some(
-    (path) => url.includes(path)
-  );
+  [
+    "/user/login",
+    "/user/register",
+    "/user/logout",
+    "/user/refresh",
+    "/user/password/forgot",
+    "/user/password/reset",
+  ].some((path) => url.includes(path));
 
 api.interceptors.response.use(
   (response) => response,

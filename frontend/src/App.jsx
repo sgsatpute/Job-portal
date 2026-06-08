@@ -12,6 +12,8 @@ import { USER_ROLES } from "./constants/userRoles";
 
 const Login = lazy(() => import("./components/Auth/Login"));
 const Register = lazy(() => import("./components/Auth/Register"));
+const ForgotPassword = lazy(() => import("./components/Auth/ForgotPassword"));
+const ResetPassword = lazy(() => import("./components/Auth/ResetPassword"));
 const Home = lazy(() => import("./components/Home/Home"));
 const Jobs = lazy(() => import("./components/Job/Jobs"));
 const JobDetails = lazy(() => import("./components/Job/JobDetails"));
@@ -60,6 +62,8 @@ const App = () => {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/password/forgot" element={<ForgotPassword />} />
+            <Route path="/password/reset/:token" element={<ResetPassword />} />
             <Route
               path="/"
               element={<Home />}

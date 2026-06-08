@@ -27,6 +27,14 @@ const userSchema = new mongoose.Schema({
     maxLength: [32, "Password cannot exceed 32 characters!"],
     select: false,
   },
+  resetPasswordToken: {
+    type: String,
+    select: false,
+  },
+  resetPasswordExpire: {
+    type: Date,
+    select: false,
+  },
   role: {
     type: String,
     required: [true, "Please select a role"],
