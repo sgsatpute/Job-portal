@@ -48,6 +48,10 @@ const Navbar = () => {
     );
   }
 
+  if (user?.role === USER_ROLES.JOB_SEEKER) {
+    navLinks.push({ to: "/saved-jobs", label: "Saved Jobs" });
+  }
+
   return (
     <nav className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">

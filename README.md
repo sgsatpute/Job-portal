@@ -68,6 +68,7 @@ JobPortal has two user roles:
 - Protected frontend routes that redirect unauthenticated users to login.
 - Job posting and management for employers.
 - Job browsing with keyword search by title, category, description, city, country, or location.
+- Saved jobs workflow for job seekers with bookmark controls and a dedicated saved jobs page.
 - Real-time frontend filters for job type, location, and salary range.
 - Backend filtering, pagination, and active-job filtering.
 - PDF resume upload for job seekers.
@@ -390,6 +391,15 @@ limit=9
 | GET | `/application/jobseeker/getall` | Job Seeker | Get own applications |
 | DELETE | `/application/delete/:id` | Job Seeker | Delete own application |
 
+### Saved Job Routes
+
+| Method | Route | Auth | Description |
+| --- | --- | --- | --- |
+| GET | `/saved-jobs` | Job Seeker | List saved jobs |
+| GET | `/saved-jobs/ids` | Job Seeker | Get saved job ids for bookmark state |
+| POST | `/saved-jobs/:jobId` | Job Seeker | Save a job |
+| DELETE | `/saved-jobs/:jobId` | Job Seeker | Remove a saved job |
+
 ### External Jobs
 
 | Method | Route | Auth | Description |
@@ -666,7 +676,6 @@ The frontend includes `frontend/vercel.json` with a rewrite to `index.html`. Mak
 ## Roadmap Ideas
 
 - Admin panel for monitoring users, jobs, and applications.
-- Saved jobs for job seekers.
 - Employer applicant notes.
 - Advanced MongoDB Atlas Search or Elasticsearch ranking.
 - Public landing page that does not require login.

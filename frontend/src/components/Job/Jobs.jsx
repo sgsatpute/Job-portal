@@ -1,5 +1,11 @@
 import { useContext, useEffect, useState } from "react";
-import { FaFilter, FaRobot, FaSearch } from "react-icons/fa";
+import {
+  FaBookmark,
+  FaFilter,
+  FaRegBookmark,
+  FaRobot,
+  FaSearch,
+} from "react-icons/fa";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Context } from "../../main";
@@ -13,6 +19,8 @@ const Jobs = () => {
   const [jobs, setJobs] = useState([]);
   const [locations, setLocations] = useState([]);
   const [jobMatches, setJobMatches] = useState({});
+  const [savedJobIds, setSavedJobIds] = useState([]);
+  const [saveLoading, setSaveLoading] = useState({});
   const [recommendations, setRecommendations] = useState([]);
   const [matchesLoading, setMatchesLoading] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -114,24 +122,61 @@ const Jobs = () => {
   useEffect(() => {
     if (!isAuthorized || user?.role !== USER_ROLES.JOB_SEEKER) {
       setRecommendations([]);
+      setSavedJobIds([]);
       return;
     }
 
-    const fetchRecommendations = async () => {
-      try {
-        const { data } = await api.get("/recommendations/jobs");
-        setRecommendations(data.recommendations || []);
-      } catch {
+    const fetchJobSeekerExtras = async () => {
+      const [recommendationsResult, savedIdsResult] = await Promise.allSettled([
+        api.get("/recommendations/jobs"),
+        api.get("/saved-jobs/ids"),
+      ]);
+
+      if (recommendationsResult.status === "fulfilled") {
+        setRecommendations(recommendationsResult.value.data.recommendations || []);
+      } else {
         setRecommendations([]);
+      }
+
+      if (savedIdsResult.status === "fulfilled") {
+        setSavedJobIds(savedIdsResult.value.data.jobIds || []);
+      } else {
+        setSavedJobIds([]);
       }
     };
 
-    fetchRecommendations();
+    fetchJobSeekerExtras();
   }, [isAuthorized, user?.role]);
 
   const updateFilter = (key, value) => {
     setPage(1);
     setFilters((current) => ({ ...current, [key]: value }));
+  };
+
+  const toggleSavedJob = async (jobId) => {
+    if (!isAuthorized || user?.role !== USER_ROLES.JOB_SEEKER) {
+      toast.error("Please log in as a job seeker to save jobs.");
+      return;
+    }
+
+    const isSaved = savedJobIds.includes(jobId);
+    setSaveLoading((current) => ({ ...current, [jobId]: true }));
+
+    try {
+      if (isSaved) {
+        const { data } = await api.delete(`/saved-jobs/${jobId}`);
+        toast.success(data.message);
+        setSavedJobIds((current) => current.filter((id) => id !== jobId));
+      } else {
+        const { data } = await api.post(`/saved-jobs/${jobId}`);
+        toast.success(data.message);
+        setSavedJobIds((current) => [...new Set([...current, jobId])]);
+      }
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Unable to update saved job."));
+    } finally {
+      setSaveLoading((current) => ({ ...current, [jobId]: false }));
+    }
   };
 
   if (initialLoad && loading) {
@@ -276,9 +321,32 @@ const Jobs = () => {
                   <h2 className="text-lg font-bold text-slate-950">{job.title}</h2>
                   <p className="mt-1 text-sm text-slate-500">{job.category}</p>
                 </div>
-                <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
-                  {job.jobType || "Full-time"}
-                </span>
+                <div className="flex shrink-0 items-center gap-2">
+                  <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
+                    {job.jobType || "Full-time"}
+                  </span>
+                  {isAuthorized && user?.role === USER_ROLES.JOB_SEEKER && (
+                    <button
+                      type="button"
+                      className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border text-sm transition ${
+                        savedJobIds.includes(job._id)
+                          ? "border-brand-200 bg-brand-50 text-brand-700"
+                          : "border-slate-200 bg-white text-slate-500 hover:border-brand-300 hover:text-brand-700"
+                      }`}
+                      onClick={() => toggleSavedJob(job._id)}
+                      disabled={saveLoading[job._id]}
+                      aria-label={
+                        savedJobIds.includes(job._id) ? "Unsave job" : "Save job"
+                      }
+                    >
+                      {savedJobIds.includes(job._id) ? (
+                        <FaBookmark />
+                      ) : (
+                        <FaRegBookmark />
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="space-y-2 text-sm text-slate-600">
                 <p>

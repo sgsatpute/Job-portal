@@ -97,6 +97,47 @@ describeWithDb("Job and application APIs", () => {
     expect(response.body.message).toBe("Job seekers are not allowed to post jobs.");
   });
 
+  it("lets job seekers save and unsave jobs", async () => {
+    const employer = await registerAgent(employerPayload);
+    const seeker = await registerAgent(seekerPayload);
+
+    const postResponse = await employer.agent
+      .post("/api/v1/job/post")
+      .send(jobPayload)
+      .expect(200);
+
+    const jobId = postResponse.body.job._id;
+
+    await employer.agent.post(`/api/v1/saved-jobs/${jobId}`).expect(403);
+
+    const emptyIdsResponse = await seeker.agent
+      .get("/api/v1/saved-jobs/ids")
+      .expect(200);
+    expect(emptyIdsResponse.body.jobIds).toEqual([]);
+
+    const saveResponse = await seeker.agent
+      .post(`/api/v1/saved-jobs/${jobId}`)
+      .expect(200);
+
+    expect(saveResponse.body.savedJob.job._id).toBe(jobId);
+
+    await seeker.agent.post(`/api/v1/saved-jobs/${jobId}`).expect(200);
+
+    const listResponse = await seeker.agent.get("/api/v1/saved-jobs").expect(200);
+    expect(listResponse.body.savedJobs).toHaveLength(1);
+    expect(listResponse.body.savedJobs[0].job.title).toBe(jobPayload.title);
+
+    const idsResponse = await seeker.agent.get("/api/v1/saved-jobs/ids").expect(200);
+    expect(idsResponse.body.jobIds).toEqual([jobId]);
+
+    await seeker.agent.delete(`/api/v1/saved-jobs/${jobId}`).expect(200);
+
+    const finalListResponse = await seeker.agent
+      .get("/api/v1/saved-jobs")
+      .expect(200);
+    expect(finalListResponse.body.savedJobs).toHaveLength(0);
+  });
+
   it("tracks application status through employer and job seeker dashboards", async () => {
     const employer = await registerAgent(employerPayload);
     const seeker = await registerAgent(seekerPayload);

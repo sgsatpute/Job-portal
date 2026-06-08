@@ -6,6 +6,7 @@ import externalJobRouter from "./routes/externalJobRoutes.js";
 import aiRouter from "./routes/aiRoutes.js";
 import notificationRouter from "./routes/notificationRoutes.js";
 import recommendationRouter from "./routes/recommendationRoutes.js";
+import savedJobRouter from "./routes/savedJobRoutes.js";
 import cors from "cors";
 import { errorMiddleware } from "./middlewares/error.js";
 import cookieParser from "cookie-parser";
@@ -85,6 +86,7 @@ app.use("/api/v1/external-jobs", externalJobRouter);
 app.use("/api/v1/ai", aiRouter);
 app.use("/api/v1/notifications", notificationRouter);
 app.use("/api/v1/recommendations", recommendationRouter);
+app.use("/api/v1/saved-jobs", savedJobRouter);
 
 app.use(errorMiddleware);
 export default app;

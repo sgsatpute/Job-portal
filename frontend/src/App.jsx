@@ -17,6 +17,7 @@ const ResetPassword = lazy(() => import("./components/Auth/ResetPassword"));
 const Home = lazy(() => import("./components/Home/Home"));
 const Jobs = lazy(() => import("./components/Job/Jobs"));
 const JobDetails = lazy(() => import("./components/Job/JobDetails"));
+const SavedJobs = lazy(() => import("./components/Job/SavedJobs"));
 const Application = lazy(() => import("./components/Application/Application"));
 const MyApplications = lazy(() => import("./components/Application/MyApplications"));
 const PostJob = lazy(() => import("./components/Job/PostJob"));
@@ -85,6 +86,14 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <ExternalJobs />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/saved-jobs"
+              element={
+                <ProtectedRoute allowedRoles={[USER_ROLES.JOB_SEEKER]}>
+                  <SavedJobs />
                 </ProtectedRoute>
               }
             />
