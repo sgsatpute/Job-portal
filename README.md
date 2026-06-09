@@ -30,6 +30,7 @@ The project is checked with:
 ## Placement Preparation Docs
 
 - [Project Learning Guide](docs/PROJECT_LEARNING_GUIDE.md) explains the project from basics to interview answers.
+- [Full Stack Placement Study Plan](docs/FULL_STACK_PLACEMENT_STUDY_PLAN.md) gives a beginner-first 45-day plan for learning full stack, DSA, CS fundamentals, and project interview preparation.
 - [Production Audit Roadmap](docs/PRODUCTION_AUDIT_ROADMAP.md) records strengths, risks, completed upgrades, and future improvements.
 
 ## Screenshots
@@ -100,6 +101,7 @@ JobPortal has two user roles:
 - Employer-side resume links while reviewing applications.
 - Application statuses: `Pending`, `Shortlisted`, and `Rejected`.
 - Employer interview scheduling and cancellation for shortlisted candidates.
+- Employer-only private recruiter notes on candidate applications.
 - Candidate dashboard interview details with schedule, mode, location/link, and notes.
 - Job seeker dashboard with total applications and status counts.
 - Employer dashboard with total jobs posted and total applications received.
@@ -132,6 +134,7 @@ JobPortal has two user roles:
 - 404 page for unknown frontend routes.
 - Production deployment configuration for Render and Vercel.
 - GitHub Actions CI for frontend and backend checks.
+- Demo seed data script for placement demos and walkthroughs.
 
 ## Tech Stack
 
@@ -323,6 +326,30 @@ Redis:    localhost:6379
 
 The Docker setup uses local placeholder secrets and optional AI/external-job settings. For real demos, set Gemini, Adzuna, and Cloudinary credentials through environment variables or a compose override file instead of committing secrets.
 
+### 5. Demo Seed Data
+
+The backend includes a safe demo seeding script. It recreates only known demo users, demo jobs, demo applications, saved jobs, notifications, recommendations, interviews, and employer notes.
+
+```sh
+cd backend
+npm run seed:demo
+```
+
+Demo login accounts:
+
+```text
+Employer:  demo.employer@sauravjobportal.com
+Candidate: demo.candidate@sauravjobportal.com
+Password:  Password123
+```
+
+If you intentionally seed a production database, set the explicit safety flag:
+
+```powershell
+$env:ALLOW_DEMO_SEED="true"
+npm run seed:demo
+```
+
 ## Demo Flow
 
 ### Job Seeker Flow
@@ -343,7 +370,8 @@ The Docker setup uses local placeholder secrets and optional AI/external-job set
 4. Post jobs.
 5. Review posted jobs and application counts.
 6. Open applications, view applicant resume links, and update application status.
-7. Use the employer dashboard to review totals.
+7. Schedule/cancel interviews and add private recruiter notes.
+8. Use the employer dashboard to review totals.
 
 ## API Overview
 
@@ -410,6 +438,8 @@ limit=9
 | PUT | `/application/employer/status/:id` | Employer | Update application status |
 | PUT | `/application/employer/interview/:id` | Employer | Schedule or reschedule interview |
 | PUT | `/application/employer/interview/:id/cancel` | Employer | Cancel scheduled interview |
+| POST | `/application/employer/notes/:id` | Employer | Add private recruiter note |
+| DELETE | `/application/employer/notes/:applicationId/:noteId` | Employer | Delete private recruiter note |
 | GET | `/application/jobseeker/dashboard` | Job Seeker | Get dashboard stats |
 | GET | `/application/jobseeker/getall` | Job Seeker | Get own applications |
 | DELETE | `/application/delete/:id` | Job Seeker | Delete own application |
@@ -715,10 +745,10 @@ The frontend includes `frontend/vercel.json` with a rewrite to `index.html`. Mak
 ## Roadmap Ideas
 
 - Admin panel for monitoring users, jobs, and applications.
-- Employer applicant notes.
 - Advanced MongoDB Atlas Search or Elasticsearch ranking.
 - Public landing page that does not require login.
-- Seed script for demo users and demo jobs.
+- OCR fallback for scanned resumes.
+- Frontend component tests with Vitest and React Testing Library.
 - More screenshots for authenticated workflows.
 
 ## Developer

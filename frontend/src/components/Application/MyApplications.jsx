@@ -4,6 +4,7 @@ import {
   FaExternalLinkAlt,
   FaFilePdf,
   FaRobot,
+  FaStickyNote,
   FaTimes,
   FaTrash,
 } from "react-icons/fa";
@@ -164,12 +165,38 @@ const MyApplications = () => {
       toast.success(data.message);
       setApplications((current) =>
         current.map((application) =>
-          application._id === id ? { ...application, status } : application
+          application._id === id
+            ? data.application || { ...application, status }
+            : application
         )
       );
     } catch (error) {
       toast.error(getErrorMessage(error, "Unable to update application status."));
     }
+  };
+
+  const addEmployerNote = async (id, note) => {
+    const { data } = await api.post(`/application/employer/notes/${id}`, {
+      note,
+    });
+    toast.success(data.message);
+    setApplications((current) =>
+      current.map((application) =>
+        application._id === id ? data.application : application
+      )
+    );
+  };
+
+  const deleteEmployerNote = async (applicationId, noteId) => {
+    const { data } = await api.delete(
+      `/application/employer/notes/${applicationId}/${noteId}`
+    );
+    toast.success(data.message);
+    setApplications((current) =>
+      current.map((application) =>
+        application._id === applicationId ? data.application : application
+      )
+    );
   };
 
   const scheduleInterview = async (id, interviewPayload) => {
@@ -314,6 +341,8 @@ const MyApplications = () => {
               updateApplicationStatus={updateApplicationStatus}
               scheduleInterview={scheduleInterview}
               cancelInterview={cancelInterview}
+              addEmployerNote={addEmployerNote}
+              deleteEmployerNote={deleteEmployerNote}
             />
           ))}
         </div>
@@ -540,11 +569,15 @@ const EmployerCard = ({
   updateApplicationStatus,
   scheduleInterview,
   cancelInterview,
+  addEmployerNote,
+  deleteEmployerNote,
 }) => {
   const job = application.jobID;
   const [aiSummary, setAiSummary] = useState(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [interviewLoading, setInterviewLoading] = useState(false);
+  const [noteText, setNoteText] = useState("");
+  const [noteLoading, setNoteLoading] = useState(false);
   const [interviewForm, setInterviewForm] = useState({
     scheduledAt: toDateTimeLocalValue(application.interview?.scheduledAt),
     mode: application.interview?.mode || "Video Call",
@@ -554,6 +587,7 @@ const EmployerCard = ({
 
   const isInterviewScheduled = application.interview?.status === "Scheduled";
   const canScheduleInterview = application.status !== "Rejected";
+  const employerNotes = application.employerNotes || [];
 
   const summarizeCandidate = async () => {
     setSummaryLoading(true);
@@ -616,6 +650,40 @@ const EmployerCard = ({
       toast.error(getErrorMessage(error, "Unable to cancel interview."));
     } finally {
       setInterviewLoading(false);
+    }
+  };
+
+  const handleAddNote = async (event) => {
+    event.preventDefault();
+    const trimmedNote = noteText.trim();
+    if (trimmedNote.length < 2) {
+      toast.error("Candidate note must contain at least 2 characters.");
+      return;
+    }
+    if (trimmedNote.length > 1000) {
+      toast.error("Candidate note cannot exceed 1000 characters.");
+      return;
+    }
+
+    setNoteLoading(true);
+    try {
+      await addEmployerNote(application._id, trimmedNote);
+      setNoteText("");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Unable to save candidate note."));
+    } finally {
+      setNoteLoading(false);
+    }
+  };
+
+  const handleDeleteNote = async (noteId) => {
+    setNoteLoading(true);
+    try {
+      await deleteEmployerNote(application._id, noteId);
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Unable to delete candidate note."));
+    } finally {
+      setNoteLoading(false);
     }
   };
 
@@ -776,6 +844,68 @@ const EmployerCard = ({
           </div>
         </div>
       </form>
+      <section className="mt-5 rounded-lg border border-slate-200 bg-white p-4">
+        <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <h3 className="flex items-center gap-2 text-sm font-bold text-slate-950">
+            <FaStickyNote />
+            Private Recruiter Notes
+          </h3>
+          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            {employerNotes.length}/25 notes
+          </span>
+        </div>
+        <form onSubmit={handleAddNote} className="grid gap-3 md:grid-cols-[1fr_auto]">
+          <textarea
+            value={noteText}
+            onChange={(event) => setNoteText(event.target.value)}
+            className="field min-h-24 resize-y"
+            maxLength={1000}
+            placeholder="Add screening feedback, follow-up questions, or hiring context"
+          />
+          <div className="flex items-start">
+            <button
+              type="submit"
+              className="primary-btn w-full md:w-auto"
+              disabled={noteLoading || employerNotes.length >= 25}
+            >
+              <FaStickyNote />
+              {noteLoading ? "Saving..." : "Add Note"}
+            </button>
+          </div>
+        </form>
+
+        {employerNotes.length === 0 ? (
+          <p className="mt-4 rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500">
+            No private notes yet.
+          </p>
+        ) : (
+          <div className="mt-4 space-y-3">
+            {employerNotes.map((note) => (
+              <div
+                key={note._id}
+                className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3"
+              >
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <p className="text-sm leading-6 text-slate-700">{note.note}</p>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteNote(note._id)}
+                    className="danger-btn shrink-0 px-3 py-2"
+                    disabled={noteLoading}
+                  >
+                    <FaTrash />
+                    Delete
+                  </button>
+                </div>
+                <p className="mt-2 text-xs text-slate-500">
+                  Added by {note.createdBy?.name || "Employer"} on{" "}
+                  {formatDateTime(note.createdAt)}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
       {aiSummary && (
         <div className="mt-5 rounded-lg border border-brand-100 bg-brand-50/40 p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">

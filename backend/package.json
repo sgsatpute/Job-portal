@@ -10,6 +10,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
+    "seed:demo": "node scripts/seedDemoData.js",
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand",
     "test:coverage": "npm test -- --coverage"
   },

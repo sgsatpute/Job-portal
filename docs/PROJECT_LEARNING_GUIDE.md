@@ -13,7 +13,7 @@ Use this guide to understand the project from zero, explain it in interviews, an
 JobPortal is a MERN stack job portal where:
 
 - Job seekers can register, login, search and save jobs, upload resumes, apply for jobs, track application status, view interview schedules, receive notifications, and use AI placement tools.
-- Employers can register, login, post jobs, view applications, open resumes, update status, schedule or cancel interviews, receive notifications, use analytics, and use AI to summarize candidates.
+- Employers can register, login, post jobs, view applications, open resumes, update status, schedule or cancel interviews, add private recruiter notes, receive notifications, use analytics, and use AI to summarize candidates.
 
 The app is deployed with:
 
@@ -727,6 +727,21 @@ flowchart TD
 
 > Every application has a status field. By default it is Pending. Employers can update it to Shortlisted or Rejected, and the job seeker dashboard reads these applications to show current status counts.
 
+### Employer Private Notes
+
+Employers can add private recruiter notes to an application.
+
+Important rule:
+
+- Notes are visible only to the employer who owns the application.
+- Job seekers do not receive employer notes in their dashboard response.
+- The backend stores notes inside the Application document as `employerNotes`.
+- The `employerNotes` field uses `select: false`, so it is excluded unless the employer route explicitly selects it.
+
+Interview answer:
+
+> Employer notes are private screening notes attached to an application. The backend checks that the logged-in employer owns the application before allowing notes to be added or deleted. The field is hidden by default using Mongoose `select: false`, so job seekers cannot see recruiter notes.
+
 ---
 
 ## 14. Dashboards
@@ -765,6 +780,7 @@ Shows:
 - application count per job
 - employer applications
 - candidate resume links
+- private recruiter notes
 
 Backend route:
 
@@ -986,6 +1002,35 @@ ADZUNA_APP_KEY
 
 > I deployed the React frontend on Vercel and the Express backend on Render. MongoDB Atlas is used for database, Cloudinary for resume storage, Gemini for AI, and environment variables are configured separately on deployment platforms.
 
+### Demo Seed Data
+
+The backend has a demo seed script:
+
+```text
+cd backend
+npm run seed:demo
+```
+
+It creates demo employer and job seeker accounts, demo jobs, one application, an interview schedule, saved job, notifications, recommendations, and private employer notes.
+
+Demo credentials:
+
+```text
+Employer:  demo.employer@sauravjobportal.com
+Candidate: demo.candidate@sauravjobportal.com
+Password:  Password123
+```
+
+If you run it against a production database, set:
+
+```text
+ALLOW_DEMO_SEED=true
+```
+
+Interview answer:
+
+> I added a seed script so reviewers can quickly test the complete workflow without manually creating data. It resets only known demo records, not the whole database.
+
 ---
 
 ## 18. Important APIs To Know
@@ -1020,6 +1065,10 @@ ADZUNA_APP_KEY
 | POST | `/application/post` | Apply to job |
 | GET | `/application/employer/getall` | Employer applications |
 | PUT | `/application/employer/status/:id` | Update status |
+| PUT | `/application/employer/interview/:id` | Schedule interview |
+| PUT | `/application/employer/interview/:id/cancel` | Cancel interview |
+| POST | `/application/employer/notes/:id` | Add private employer note |
+| DELETE | `/application/employer/notes/:applicationId/:noteId` | Delete private employer note |
 | GET | `/application/jobseeker/dashboard` | Job seeker dashboard |
 | GET | `/application/jobseeker/getall` | Job seeker applications |
 | DELETE | `/application/delete/:id` | Delete own application |
@@ -1043,11 +1092,11 @@ ADZUNA_APP_KEY
 
 Use this answer:
 
-> My project is a MERN stack job portal. It has two roles: job seeker and employer. Job seekers can search and save jobs, upload resumes, apply for jobs, track application status, view interview schedules, receive notifications, and use AI tools for resume analysis, job match, cover letters, interview questions, and skill roadmaps. Employers can post jobs, view applications, open Cloudinary-hosted resumes, update application status, schedule interviews, view analytics, and generate AI candidate summaries. The frontend is built with React and Tailwind CSS. The backend is built with Express and MongoDB using Mongoose. Authentication uses short-lived JWT access tokens and rotating refresh tokens stored in HTTP-only cookies. Resume PDFs are uploaded to Cloudinary and text is extracted using pdf-parse. AI uses Gemini API free tier with fallback logic. The frontend is deployed on Vercel and backend on Render.
+> My project is a MERN stack job portal. It has two roles: job seeker and employer. Job seekers can search and save jobs, upload resumes, apply for jobs, track application status, view interview schedules, receive notifications, and use AI tools for resume analysis, job match, cover letters, interview questions, and skill roadmaps. Employers can post jobs, view applications, open Cloudinary-hosted resumes, update application status, schedule interviews, add private recruiter notes, view analytics, and generate AI candidate summaries. The frontend is built with React and Tailwind CSS. The backend is built with Express and MongoDB using Mongoose. Authentication uses short-lived JWT access tokens and rotating refresh tokens stored in HTTP-only cookies. Resume PDFs are uploaded to Cloudinary and text is extracted using pdf-parse. AI uses Gemini API free tier with fallback logic. The frontend is deployed on Vercel and backend on Render.
 
 Short version:
 
-> It is a role-based MERN job portal with job posting, saved jobs, applications, resume upload, dashboards, status tracking, interview scheduling, real-time notifications, Gemini AI placement tools, and deployment on Vercel/Render.
+> It is a role-based MERN job portal with job posting, saved jobs, applications, resume upload, dashboards, status tracking, interview scheduling, private recruiter notes, real-time notifications, Gemini AI placement tools, and deployment on Vercel/Render.
 
 ---
 
@@ -1063,18 +1112,20 @@ JobPortal - MERN Stack Job Portal Application
 - Built saved jobs/bookmark workflow with a dedicated saved jobs dashboard.
 - Added PDF resume upload using Cloudinary and resume text extraction using pdf-parse.
 - Created job seeker and employer dashboards with application status tracking, interview scheduling, and analytics.
+- Built employer-only private recruiter notes for candidate screening workflows.
 - Added Socket.IO notifications for application, resume, status, and interview events.
 - Integrated Gemini API for resume analysis, job matching, cover letter generation, interview questions, and skill roadmaps.
 - Added secure password reset with hashed reset tokens and refresh-token rotation.
 - Added Jest/Supertest API tests and GitHub Actions CI with MongoDB service and Docker builds.
 - Integrated Adzuna API to fetch live external job listings.
+- Added demo seed data for fast placement walkthroughs.
 - Deployed frontend on Vercel and backend on Render with MongoDB Atlas.
 ```
 
 If you want a shorter resume version:
 
 ```text
-Built a MERN stack job portal with role-based authentication, job posting, saved jobs, applications, resume upload, dashboards, interview scheduling, real-time notifications, Gemini AI placement tools, Adzuna live jobs, CI/CD, and deployment on Vercel/Render.
+Built a MERN stack job portal with role-based authentication, job posting, saved jobs, applications, resume upload, dashboards, interview scheduling, private recruiter notes, real-time notifications, Gemini AI placement tools, Adzuna live jobs, CI/CD, and deployment on Vercel/Render.
 ```
 
 ---
@@ -1163,7 +1214,7 @@ Answer:
 
 Answer:
 
-> I would add admin moderation, better search ranking through MongoDB Atlas Search or Elasticsearch, OCR for scanned resumes, employer notes, seeded demo data, and frontend component tests.
+> I would add admin moderation, better search ranking through MongoDB Atlas Search or Elasticsearch, OCR for scanned resumes, frontend component tests, and multi-round interview management.
 
 ---
 
@@ -2882,7 +2933,7 @@ Do not memorize word-for-word only. Understand the meaning.
 
 Candidate answer:
 
-> My project is JobPortal, a MERN stack job portal application. It supports two roles: job seeker and employer. Job seekers can register, login, search and filter jobs, save jobs, upload PDF resumes, apply to jobs, track application status, view interview schedules, receive notifications, and use Gemini AI placement tools. Employers can post jobs, view applications, open resumes, update application status, schedule interviews, view analytics, and use AI candidate summaries. The frontend is built with React, Vite, Tailwind CSS, React Router, Axios, Socket.IO Client, Recharts, and react-hot-toast. The backend is built with Node.js, Express.js, MongoDB, Mongoose, JWT authentication, rotating refresh tokens, Cloudinary file upload, Socket.IO, Gemini API, and Adzuna external jobs API.
+> My project is JobPortal, a MERN stack job portal application. It supports two roles: job seeker and employer. Job seekers can register, login, search and filter jobs, save jobs, upload PDF resumes, apply to jobs, track application status, view interview schedules, receive notifications, and use Gemini AI placement tools. Employers can post jobs, view applications, open resumes, update application status, schedule interviews, add private recruiter notes, view analytics, and use AI candidate summaries. The frontend is built with React, Vite, Tailwind CSS, React Router, Axios, Socket.IO Client, Recharts, and react-hot-toast. The backend is built with Node.js, Express.js, MongoDB, Mongoose, JWT authentication, rotating refresh tokens, Cloudinary file upload, Socket.IO, Gemini API, and Adzuna external jobs API.
 
 #### Interviewer: Why did you build this project?
 
@@ -3218,6 +3269,12 @@ Candidate answer:
 
 > Interview scheduling belongs to a specific application, so embedding it keeps the data simple and avoids another collection for this stage. If the product later supports multiple rounds, I would move interviews into a separate collection.
 
+#### Interviewer: How do private employer notes work?
+
+Candidate answer:
+
+> Employer notes are stored in the Application document but hidden by default with Mongoose `select: false`. Only employer routes explicitly select the notes, and the controller checks that the logged-in employer owns the application before adding or deleting notes. Job seeker dashboard APIs do not expose these notes.
+
 ---
 
 ### Interview Round 10: Dashboards
@@ -3484,13 +3541,13 @@ Candidate answer:
 
 Candidate answer:
 
-> It does not have an admin moderation panel, OCR for scanned resumes, frontend component tests, advanced Atlas Search or Elasticsearch ranking, seeded demo data, or multi-round interview management. Also, Render free hosting can have cold-start delay.
+> It does not have an admin moderation panel, OCR for scanned resumes, frontend component tests, advanced Atlas Search or Elasticsearch ranking, or multi-round interview management. Also, Render free hosting can have cold-start delay.
 
 #### Interviewer: What would you improve next?
 
 Candidate answer:
 
-> I would add admin moderation, OCR for scanned resumes, advanced search ranking, employer applicant notes, frontend component tests, seeded demo users/jobs, and multi-round interview scheduling.
+> I would add admin moderation, OCR for scanned resumes, advanced search ranking, frontend component tests, and multi-round interview scheduling.
 
 #### Interviewer: How would you add OCR?
 

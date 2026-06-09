@@ -1,6 +1,8 @@
 import express from "express";
 import {
+  addEmployerNote,
   cancelInterview,
+  deleteEmployerNote,
   employerGetAllApplications,
   jobseekerDeleteApplication,
   jobseekerDashboard,
@@ -12,6 +14,8 @@ import {
 import { isAuthenticated } from "../middlewares/auth.js";
 import { validateRequest } from "../middlewares/validateRequest.js";
 import {
+  applicationNoteSchema,
+  deleteApplicationNoteSchema,
   postApplicationSchema,
   scheduleInterviewSchema,
   updateApplicationStatusSchema,
@@ -42,6 +46,18 @@ router.put(
   "/employer/interview/:id/cancel",
   isAuthenticated,
   cancelInterview
+);
+router.post(
+  "/employer/notes/:id",
+  isAuthenticated,
+  validateRequest(applicationNoteSchema),
+  addEmployerNote
+);
+router.delete(
+  "/employer/notes/:applicationId/:noteId",
+  isAuthenticated,
+  validateRequest(deleteApplicationNoteSchema),
+  deleteEmployerNote
 );
 router.get("/jobseeker/dashboard", isAuthenticated, jobseekerDashboard);
 router.get("/jobseeker/getall", isAuthenticated, jobseekerGetAllApplications);

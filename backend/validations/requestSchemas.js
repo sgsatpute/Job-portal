@@ -193,3 +193,19 @@ export const scheduleInterviewSchema = z.object({
       }
     }),
 });
+
+export const applicationNoteSchema = z.object({
+  params: z.object({
+    id: trimString(1, 80),
+  }),
+  body: z.object({
+    note: trimString(2, 1000),
+  }),
+});
+
+export const deleteApplicationNoteSchema = z.object({
+  params: z.object({
+    applicationId: trimString(1, 80),
+    noteId: trimString(1, 80),
+  }),
+});

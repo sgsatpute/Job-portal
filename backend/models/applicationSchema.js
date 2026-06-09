@@ -7,6 +7,29 @@ import {
   USER_ROLES,
 } from "../constants/applicationConstants.js";
 
+const employerNoteSchema = new mongoose.Schema(
+  {
+    note: {
+      type: String,
+      required: [true, "Please enter a note."],
+      trim: true,
+      minLength: [2, "Note must contain at least 2 characters!"],
+      maxLength: [1000, "Note cannot exceed 1000 characters!"],
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+  },
+  {
+    timestamps: {
+      createdAt: true,
+      updatedAt: false,
+    },
+  }
+);
+
 const applicationSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -82,6 +105,11 @@ const applicationSchema = new mongoose.Schema({
     cancelledOn: {
       type: Date,
     },
+  },
+  employerNotes: {
+    type: [employerNoteSchema],
+    select: false,
+    default: [],
   },
   jobID: {
     type: mongoose.Schema.Types.ObjectId,

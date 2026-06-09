@@ -209,6 +209,48 @@ describeWithDb("Job and application APIs", () => {
     });
     expect(employerDashboard.body.jobs[0].applicationCount).toBe(1);
 
+    const noteResponse = await employer.agent
+      .post(`/api/v1/application/employer/notes/${applicationResponse.body.application._id}`)
+      .send({
+        note: "Strong MERN background. Ask follow-up questions about JWT cookies and dashboard analytics.",
+      })
+      .expect(201);
+
+    expect(noteResponse.body.application.employerNotes).toHaveLength(1);
+    expect(noteResponse.body.application.employerNotes[0].note).toContain(
+      "Strong MERN background"
+    );
+
+    await seeker.agent
+      .post(`/api/v1/application/employer/notes/${applicationResponse.body.application._id}`)
+      .send({ note: "Candidates should not be able to add employer notes." })
+      .expect(403);
+
+    const employerApplications = await employer.agent
+      .get("/api/v1/application/employer/getall")
+      .expect(200);
+
+    expect(employerApplications.body.applications[0].employerNotes).toHaveLength(
+      1
+    );
+
+    const seekerDashboardBeforeNoteDelete = await seeker.agent
+      .get("/api/v1/application/jobseeker/dashboard")
+      .expect(200);
+
+    expect(
+      seekerDashboardBeforeNoteDelete.body.applications[0].employerNotes
+    ).toBeUndefined();
+
+    const noteId = noteResponse.body.application.employerNotes[0]._id;
+    const deleteNoteResponse = await employer.agent
+      .delete(
+        `/api/v1/application/employer/notes/${applicationResponse.body.application._id}/${noteId}`
+      )
+      .expect(200);
+
+    expect(deleteNoteResponse.body.application.employerNotes).toHaveLength(0);
+
     const statusResponse = await employer.agent
       .put(`/api/v1/application/employer/status/${applicationResponse.body.application._id}`)
       .send({ status: "Shortlisted" })

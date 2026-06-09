@@ -31,6 +31,34 @@ const validateApplicationFields = ({ name, email, coverLetter, phone, address })
   return null;
 };
 
+const ensureEmployerOwnsApplication = (application, employerId, actionMessage) => {
+  if (!application) {
+    throw new ErrorHandler("Application not found.", 404);
+  }
+
+  if (application.employerID.user.toString() !== employerId.toString()) {
+    throw new ErrorHandler(actionMessage, 403);
+  }
+};
+
+const getEmployerApplicationById = async (applicationId, employerId, actionMessage, includeNotes = false) => {
+  const query = Application.findById(applicationId);
+  if (includeNotes) {
+    query.select("+employerNotes");
+  }
+
+  const application = await query;
+  ensureEmployerOwnsApplication(application, employerId, actionMessage);
+  return application;
+};
+
+const getPopulatedEmployerApplication = (applicationId) =>
+  Application.findById(applicationId)
+    .select("+employerNotes")
+    .populate("jobID", "title category jobType city country")
+    .populate("applicantID.user", "name email phone resume")
+    .populate("employerNotes.createdBy", "name email");
+
 export const postApplication = catchAsyncErrors(async (req, res, next) => {
   const { role } = req.user;
   if (role === USER_ROLES.EMPLOYER) {
@@ -148,8 +176,10 @@ export const employerGetAllApplications = catchAsyncErrors(
     }
     const { _id } = req.user;
     const applications = await Application.find({ "employerID.user": _id })
+      .select("+employerNotes")
       .populate("jobID", "title category jobType city country")
       .populate("applicantID.user", "name email phone resume")
+      .populate("employerNotes.createdBy", "name email")
       .sort({ appliedAt: -1 });
     res.status(200).json({
       success: true,
@@ -213,14 +243,11 @@ export const updateApplicationStatus = catchAsyncErrors(async (req, res, next) =
     return next(new ErrorHandler("Please select a valid application status.", 400));
   }
 
-  const application = await Application.findById(id);
-  if (!application) {
-    return next(new ErrorHandler("Application not found.", 404));
-  }
-
-  if (application.employerID.user.toString() !== req.user._id.toString()) {
-    return next(new ErrorHandler("You can update only your own applications.", 403));
-  }
+  const application = await getEmployerApplicationById(
+    id,
+    req.user._id,
+    "You can update only your own applications."
+  );
 
   application.status = status;
   await application.save();
@@ -255,10 +282,12 @@ export const updateApplicationStatus = catchAsyncErrors(async (req, res, next) =
     }),
   ]);
 
+  const populatedApplication = await getPopulatedEmployerApplication(application._id);
+
   res.status(200).json({
     success: true,
     message: "Application status updated successfully.",
-    application,
+    application: populatedApplication,
   });
 });
 
@@ -275,15 +304,11 @@ export const scheduleInterview = catchAsyncErrors(async (req, res, next) => {
 
   const { id } = req.params;
   const { scheduledAt, mode, location, notes = "" } = req.body;
-  const application = await Application.findById(id);
-
-  if (!application) {
-    return next(new ErrorHandler("Application not found.", 404));
-  }
-
-  if (application.employerID.user.toString() !== req.user._id.toString()) {
-    return next(new ErrorHandler("You can schedule only your own applications.", 403));
-  }
+  const application = await getEmployerApplicationById(
+    id,
+    req.user._id,
+    "You can schedule only your own applications."
+  );
 
   if (application.status === "Rejected") {
     return next(new ErrorHandler("Cannot schedule interview for a rejected application.", 400));
@@ -331,9 +356,7 @@ export const scheduleInterview = catchAsyncErrors(async (req, res, next) => {
     }),
   ]);
 
-  const populatedApplication = await Application.findById(application._id)
-    .populate("jobID", "title category jobType city country")
-    .populate("applicantID.user", "name email phone resume");
+  const populatedApplication = await getPopulatedEmployerApplication(application._id);
 
   res.status(200).json({
     success: true,
@@ -348,15 +371,11 @@ export const cancelInterview = catchAsyncErrors(async (req, res, next) => {
   }
 
   const { id } = req.params;
-  const application = await Application.findById(id);
-
-  if (!application) {
-    return next(new ErrorHandler("Application not found.", 404));
-  }
-
-  if (application.employerID.user.toString() !== req.user._id.toString()) {
-    return next(new ErrorHandler("You can cancel only your own interviews.", 403));
-  }
+  const application = await getEmployerApplicationById(
+    id,
+    req.user._id,
+    "You can cancel only your own interviews."
+  );
 
   if (application.interview?.status !== "Scheduled") {
     return next(new ErrorHandler("No scheduled interview found for this application.", 400));
@@ -388,13 +407,71 @@ export const cancelInterview = catchAsyncErrors(async (req, res, next) => {
     }),
   ]);
 
-  const populatedApplication = await Application.findById(application._id)
-    .populate("jobID", "title category jobType city country")
-    .populate("applicantID.user", "name email phone resume");
+  const populatedApplication = await getPopulatedEmployerApplication(application._id);
 
   res.status(200).json({
     success: true,
     message: "Interview cancelled successfully.",
+    application: populatedApplication,
+  });
+});
+
+export const addEmployerNote = catchAsyncErrors(async (req, res, next) => {
+  if (req.user.role !== USER_ROLES.EMPLOYER) {
+    return next(new ErrorHandler("Only employers can add candidate notes.", 403));
+  }
+
+  const application = await getEmployerApplicationById(
+    req.params.id,
+    req.user._id,
+    "You can add notes only to your own applications.",
+    true
+  );
+
+  if (application.employerNotes.length >= 25) {
+    return next(new ErrorHandler("Maximum 25 notes are allowed per application.", 400));
+  }
+
+  application.employerNotes.push({
+    note: req.body.note.trim(),
+    createdBy: req.user._id,
+  });
+  await application.save();
+
+  const populatedApplication = await getPopulatedEmployerApplication(application._id);
+
+  res.status(201).json({
+    success: true,
+    message: "Candidate note added successfully.",
+    application: populatedApplication,
+  });
+});
+
+export const deleteEmployerNote = catchAsyncErrors(async (req, res, next) => {
+  if (req.user.role !== USER_ROLES.EMPLOYER) {
+    return next(new ErrorHandler("Only employers can delete candidate notes.", 403));
+  }
+
+  const application = await getEmployerApplicationById(
+    req.params.applicationId,
+    req.user._id,
+    "You can delete notes only from your own applications.",
+    true
+  );
+
+  const note = application.employerNotes.id(req.params.noteId);
+  if (!note) {
+    return next(new ErrorHandler("Candidate note not found.", 404));
+  }
+
+  application.employerNotes.pull(req.params.noteId);
+  await application.save();
+
+  const populatedApplication = await getPopulatedEmployerApplication(application._id);
+
+  res.status(200).json({
+    success: true,
+    message: "Candidate note deleted successfully.",
     application: populatedApplication,
   });
 });

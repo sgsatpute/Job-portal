@@ -12,7 +12,7 @@ This report reviews the current MERN JobPortal project from a placement, resume,
 
 JobPortal is a strong BTech final-year MERN project because it includes real full-stack features: role-based authentication, job posting, saved jobs, job applications, resume upload, dashboards, interview scheduling, real-time notifications, Gemini AI tools, external jobs, CI/CD checks, and deployment.
 
-The project is already stronger than a basic CRUD app. The best way to make it stand out further is to improve engineering maturity in the remaining areas: admin moderation, frontend component tests, advanced search ranking, OCR for scanned resumes, seeded demo data, and more formal service/repository separation.
+The project is already stronger than a basic CRUD app. The best way to make it stand out further is to improve engineering maturity in the remaining areas: admin moderation, frontend component tests, advanced search ranking, OCR for scanned resumes, and more formal service/repository separation.
 
 This audit now records the foundation and feature upgrades already completed.
 
@@ -32,6 +32,8 @@ Completed production-readiness improvements:
 - Socket.IO notification center.
 - Saved jobs workflow.
 - Interview scheduling and cancellation workflow.
+- Employer-only private applicant notes.
+- Demo seed data for users, jobs, applications, saved jobs, notifications, recommendations, interviews, and notes.
 - Job recommendations and candidate ranking.
 - Employer analytics charts and job seeker status chart.
 - Optional Nodemailer email templates and BullMQ/Redis queue scaffolding.
@@ -95,10 +97,8 @@ Completed production-readiness improvements:
 ### Missing Features
 
 - Admin dashboard.
-- Employer applicant notes.
 - OCR for scanned resumes.
 - Frontend component tests.
-- Seed script for demo users and jobs.
 - Advanced search through MongoDB Atlas Search or Elasticsearch.
 - Dedicated CI security scan beyond npm audit.
 
@@ -182,12 +182,12 @@ Preserved:
 | Dockerization | Completed | Medium | Medium |
 | Saved jobs | Completed | Medium | Medium |
 | Interview scheduling | Completed | High | High |
+| Employer applicant notes | Completed | Medium | Medium |
+| Demo seed script | Completed | Medium | Medium |
 | MongoDB Atlas Search or Elasticsearch | Remaining | High | High |
 | OCR for scanned resumes | Remaining | High | Medium-High |
 | Frontend component tests | Remaining | Medium | Medium |
 | Admin dashboard | Remaining | Medium | Medium |
-| Employer applicant notes | Remaining | Medium | Medium |
-| Demo seed script | Remaining | Medium | Medium |
 
 ### Highest-Value Remaining Improvements
 
@@ -195,7 +195,7 @@ Preserved:
 2. Add OCR fallback for scanned/image-only resumes.
 3. Add frontend component tests with Vitest and React Testing Library.
 4. Add admin moderation for users, jobs, and reported content.
-5. Add a seed script for demo users, jobs, applications, saved jobs, and interview schedules.
+5. Move more backend business logic into service/repository modules.
 
 ---
 
