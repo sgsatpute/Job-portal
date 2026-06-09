@@ -192,12 +192,26 @@ describeWithDb("Job and application APIs", () => {
     expect(candidateRecommendations.body.recommendations[0].score).toEqual(
       expect.any(Number)
     );
+    expect(candidateRecommendations.body.recommendations[0]).toMatchObject({
+      confidence: expect.any(String),
+      scoreBreakdown: expect.any(Object),
+      reasons: expect.any(Array),
+      matchingSkills: expect.any(Array),
+      missingSkills: expect.any(Array),
+    });
 
     const jobRecommendations = await seeker.agent
       .get("/api/v1/recommendations/jobs")
       .expect(200);
 
     expect(jobRecommendations.body.recommendations.length).toBeGreaterThan(0);
+    expect(jobRecommendations.body.recommendations[0]).toMatchObject({
+      confidence: expect.any(String),
+      scoreBreakdown: expect.any(Object),
+      reasons: expect.any(Array),
+      alreadyApplied: expect.any(Boolean),
+      savedByCandidate: expect.any(Boolean),
+    });
 
     const employerDashboard = await employer.agent
       .get("/api/v1/job/employer/dashboard")

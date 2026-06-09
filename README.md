@@ -116,7 +116,9 @@ JobPortal has two user roles:
 - Candidate notifications for shortlisted/rejected application updates.
 - Candidate notifications for scheduled/cancelled interviews.
 - Employer notifications for new applications and resume submissions.
-- Skill-based job recommendations for job seekers.
+- Weighted recommendation engine for job seekers and employers.
+- Skill, location, salary, freshness, saved-job, and application-status signals.
+- Recommendation confidence, score breakdowns, matching skills, and missing skills.
 - Candidate ranking recommendations for employers.
 - MongoDB text-index search for faster keyword search.
 - Employer analytics charts for applications per job, hiring funnel, trends, and top skills.

@@ -32,6 +32,15 @@ const recommendationScoreSchema = new mongoose.Schema({
     type: [String],
     default: [],
   },
+  confidence: {
+    type: String,
+    enum: ["High", "Medium", "Low"],
+    default: "Low",
+  },
+  scoreBreakdown: {
+    type: Object,
+    default: {},
+  },
   matchingSkills: {
     type: [String],
     default: [],

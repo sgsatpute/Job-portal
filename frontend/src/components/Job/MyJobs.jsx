@@ -266,9 +266,29 @@ const MyJobs = () => {
                               {item.score}%
                             </span>
                           </div>
+                          <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
+                            <span className="rounded-full bg-slate-50 px-2.5 py-1 text-slate-600">
+                              {item.confidence || "Low"} confidence
+                            </span>
+                            {item.savedByCandidate && (
+                              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700">
+                                Saved job
+                              </span>
+                            )}
+                            {item.application?.status && (
+                              <span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-700">
+                                {item.application.status}
+                              </span>
+                            )}
+                          </div>
                           {item.matchingSkills?.length > 0 && (
                             <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-brand-700">
                               {item.matchingSkills.slice(0, 5).join(", ")}
+                            </p>
+                          )}
+                          {item.missingSkills?.length > 0 && (
+                            <p className="mt-2 text-xs leading-5 text-slate-500">
+                              Missing: {item.missingSkills.slice(0, 4).join(", ")}
                             </p>
                           )}
                           <p className="mt-2 text-sm text-slate-600">

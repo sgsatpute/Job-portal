@@ -34,7 +34,7 @@ Completed production-readiness improvements:
 - Interview scheduling and cancellation workflow.
 - Employer-only private applicant notes.
 - Demo seed data for users, jobs, applications, saved jobs, notifications, recommendations, interviews, and notes.
-- Job recommendations and candidate ranking.
+- Weighted recommendation engine with score breakdowns, confidence labels, matching skills, missing skills, saved-job signals, and application-status signals.
 - Employer analytics charts and job seeker status chart.
 - Optional Nodemailer email templates and BullMQ/Redis queue scaffolding.
 
@@ -119,7 +119,7 @@ The project becomes more impressive if the resume mentions:
 - Production-grade validation and security middleware.
 - Structured logging.
 - Automated tests.
-- Recommendation engine.
+- Recommendation explanation and quality evaluation.
 - Real-time notifications.
 - Background workers.
 
@@ -177,7 +177,7 @@ Preserved:
 | Real-time Socket.IO notifications | Completed | High | High |
 | Password reset | Completed | Medium-High | Medium |
 | Optional Nodemailer email templates | Completed, needs production SMTP config | Medium | Medium |
-| Recommendation engine | Completed with skill-keyword scoring | Very High | Very High |
+| Recommendation engine | Completed with weighted multi-signal scoring | Very High | Very High |
 | Analytics dashboards | Completed for employer/job seeker dashboards | Medium-High | Medium |
 | Dockerization | Completed | Medium | Medium |
 | Saved jobs | Completed | Medium | Medium |
@@ -225,9 +225,9 @@ Most valuable:
 
 ### Amazon / Microsoft / Atlassian / Adobe / Walmart / Flipkart
 
-To make this project impressive for these companies, add:
+To make this project more impressive for these companies, continue improving:
 
-1. Recommendation engine.
+1. Recommendation quality evaluation and ranking experiments.
 2. Search ranking.
 3. Background jobs.
 4. Tests.
@@ -243,7 +243,7 @@ To make this project impressive for these companies, add:
 | Improvement | Resume Impact | Interview Impact | Difficulty |
 | --- | --- | --- | --- |
 | Automated tests | High | High | Medium |
-| Recommendation engine | Very High | Very High | High |
+| Recommendation quality evaluation | Very High | Very High | Medium |
 | MongoDB Atlas Search | High | High | Medium-High |
 | Background jobs with BullMQ | Very High | High | High |
 | Real-time notifications | High | High | Medium-High |
@@ -272,12 +272,11 @@ To make this project impressive for these companies, add:
 - Add password reset.
 - Add Recharts analytics.
 - Add company profile page.
-- Add basic recommendation scores.
+- Add recommendation quality test cases.
 
 ### 1 Month Plan
 
 - Add Socket.IO notifications.
-- Add recommendation engine.
 - Add MongoDB Atlas Search.
 - Add Docker Compose.
 - Add GitHub Actions test pipeline.
@@ -331,6 +330,6 @@ To make this project impressive for these companies, add:
 
 This project is good enough for BTech final-year placements today if the developer can explain it clearly.
 
-It is not yet a top-tier production system. To reach that level, the highest-impact next steps are tests, recommendation engine, real-time notifications, search upgrade, and background jobs.
+It is not yet a top-tier production system. To reach that level, the highest-impact next steps are frontend tests, OCR, admin moderation, search upgrade, recommendation evaluation, and background jobs.
 
 Do not rewrite it from scratch. Improve it in phases.

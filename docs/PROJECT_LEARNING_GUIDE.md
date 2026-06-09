@@ -3359,7 +3359,7 @@ Candidate answer:
 
 Candidate answer:
 
-> The recommendation engine extracts skill keywords from candidate profile/resume text and job text. It calculates matching and missing skills, produces a score, stores recommendation scores in MongoDB, and returns recommended jobs for candidates or ranked candidates for employers.
+> The recommendation engine extracts skills from candidate profile/resume text and job text, then calculates a weighted score using multiple signals: skill match, title/category relevance, location, salary availability, job freshness, profile completeness, saved-job interest, application status, and resume evidence. It returns a score, confidence level, score breakdown, matching skills, missing skills, and reasons. It also stores recommendation scores in MongoDB for later analytics.
 
 #### Interviewer: Is the recommendation engine the same as Gemini AI?
 

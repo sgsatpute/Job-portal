@@ -285,11 +285,29 @@ const Jobs = () => {
                     {recommendation.score}%
                   </span>
                 </div>
+                <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
+                  <span className="rounded-full bg-white px-2.5 py-1 text-slate-600">
+                    {recommendation.confidence || "Low"} confidence
+                  </span>
+                  {recommendation.savedByCandidate && (
+                    <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700">
+                      Saved
+                    </span>
+                  )}
+                  {recommendation.alreadyApplied && (
+                    <span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-700">
+                      Applied
+                    </span>
+                  )}
+                </div>
                 {recommendation.matchingSkills?.length > 0 && (
                   <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-brand-700">
                     {recommendation.matchingSkills.slice(0, 4).join(", ")}
                   </p>
                 )}
+                <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">
+                  {recommendation.reasons?.[0] || "Recommendation generated from your profile and resume signals."}
+                </p>
                 <Link
                   to={`/job/${recommendation.job._id}`}
                   className="secondary-btn mt-4 w-full"
